@@ -1,5 +1,6 @@
 import { describe, expect, it} from 'vitest';
-import { INT_TYPES, LIST_TYPES, Packstream } from './packstream';
+import { BYTE_TYPES, INT_TYPES, LIST_TYPES, Packstream, STRING_TYPES } from './packstream';
+
 describe('Packstream class', () => {
   const p = new Packstream();
   it('Works with booleans', () => {
@@ -15,6 +16,11 @@ describe('Packstream class', () => {
     expect(p.unpackageString(p.packageString('a'.repeat(15)))).toBe('a'.repeat(15));
     expect(p.unpackageString(p.packageString('ABCDEFGHIJKLMNOPQRSTUVWXYZ'))).toBe('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
     expect(p.unpackageString(p.packageString('Größenmaßstäbe'))).toBe('Größenmaßstäbe');
+    expect(p.packageString('a')).toStrictEqual(Uint8Array.from([
+      STRING_TYPES.TINY_STRING + 1, 97
+    ]));
+    expect(p.getByteLength(p.package('a'.repeat(65_536)))).toBe(65_536);
+    expect(p.getByteLength(p.packageString('a'.repeat(256)))).toBe(256);
   });
 
   it('Works with integers', () => {
@@ -58,6 +64,20 @@ describe('Packstream class', () => {
     expect(p.unpackageFloat(p.packageFloat(5.10))).toBe(5.10);
   });
 
+  it('Works with raw bytes', () => {
+    const muchBytes = Array.from({ length: 256 }, () => 0);
+    expect(p.packageBytes(Uint8Array.from([1,2,3]))).toStrictEqual(Uint8Array.from(
+      [BYTE_TYPES.BYTE_8, 0x3, 1, 2, 3]
+    ));
+
+    expect(p.packageBytes(Uint8Array.from(muchBytes))).toStrictEqual(
+      Uint8Array.from([
+        BYTE_TYPES.BYTE_16, 1, 0, ...muchBytes
+      ])
+    );
+    expect(p.getByteLength(p.packageBytes(Uint8Array.from(muchBytes)))).toBe(256);
+  });
+
   it('Works with lists', () => {
     // Empty list
     expect(p.packageList([])).toStrictEqual(Uint8Array.from([LIST_TYPES.LIST_BASE]));
@@ -68,8 +88,8 @@ describe('Packstream class', () => {
       101, 203, 0, 0, 0, 0, 0, 0,
       0, 4
     ]));
-
     expect(p.unpackageList(p.packageList([]))).toStrictEqual([]);
     expect(p.unpackageList(p.packageList([1, 2.1, 'three']))).toHaveLength(3);
+
   });
 });

@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "lint": "biome lint --apply src/",
+    "format": "biome format src/"
   },
   "exports": {
     ".": "./src/index.ts"
