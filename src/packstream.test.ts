@@ -51,8 +51,11 @@ describe('Packstream class', () => {
 
     expect(p.packageNumber(-9223372036854775808n)).toStrictEqual(Uint8Array.from([0xcb, 0x80, 0, 0, 0, 0, 0, 0, 0]));
     expect(p.packageNumber(9223372036854775807n)).toStrictEqual(Uint8Array.from([0xcb, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]));
+
+    expect(p.packageNumber(-2_147_483_649n)).toStrictEqual(Uint8Array.from([0xcb, 255, 255, 255, 255, 127, 255, 255, 255]));
+    expect(p.unpackageNumber(p.packageNumber(-2_147_483_649n))).toBe(-2_147_483_649n);
     expect(p.unpackageNumber(p.packageNumber(9223372036854775807n))).toBe(9223372036854775807n);
-    expect(p.unpackageNumber(p.packageNumber(2_147_483_648))).toBe(2_147_483_648n);
+    expect(p.unpackageNumber(p.packageNumber(2_147_483_648n))).toBe(2_147_483_648n);
     expect(p.unpackageNumber(p.packageNumber(2_147_483_648), 'string')).toBe('2147483648n');
   });
 
@@ -93,6 +96,8 @@ describe('Packstream class', () => {
 
     expect(p.unpackageList(p.packageList([]))).toStrictEqual([]);
     expect(p.unpackageList(p.packageList([1, 2, 3]))).toStrictEqual([1, 2, 3]);
+    expect(p.unpackageList(p.packageList([128]))).toStrictEqual([128]);
+    expect(p.unpackage(p.packageNumber(-2_147_483_649n))).toBe(-2_147_483_649n);
     // expect(p.unpackageList(p.packageList([1, 2.1, 'three']))).toHaveLength(3);
 
   });

@@ -34,6 +34,7 @@ export class Packstream {
 	}
 
 	unpackage(arr: Uint8Array): unknown {
+    const [marker] = arr;
 		const byteHigh = arr[0] & 0xf0;
 		const byteLow = arr[0] & 0xf;
 
@@ -43,6 +44,14 @@ export class Packstream {
     
     if(between(arr[0], 0, 16)) {
       return arr[0];
+    }
+    console.info(marker);
+    switch(marker) {
+      case INT_TYPES.INT_8:
+      case INT_TYPES.INT_16:
+      case INT_TYPES.INT_32:
+      case INT_TYPES.INT_64:
+        return this.unpackageNumber(arr);
     }
 
     return {};
@@ -68,7 +77,7 @@ export class Packstream {
 				return dv.getUint32(1);
 			}
 			case INT_TYPES.INT_64: {
-				const value = dv.getBigUint64(1);
+				const value = dv.getBigInt64(1);
 				if (bigIntMode === 'string') return `${value.toString()}n`;
 				return value;
 			}
@@ -219,7 +228,6 @@ export class Packstream {
 		const [marker] = value;
     let byteLength = 1;
 		const count = this.getByteLength(value);
-    console.info('COUNT', count);
     let sub = value.slice(0);
     if (between(count, 16, 256)) {
       byteLength = 2;
@@ -229,7 +237,6 @@ export class Packstream {
       byteLength = 5;
     }
     
-    console.info('offset by', byteLength);
 		if (count === 0) return [];
 
     let i = 0;
@@ -238,20 +245,15 @@ export class Packstream {
     while (returned.length < count) {
       ++i;
 
-      console.info('sub', i, sub);
-
       const b = this.unpackage(sub);
 
       returned.push(b);
 
       const bLength = this.getByteLength(sub);
 
-      console.info('byteLength', bLength);
       sub = sub.slice(bLength);
+
       if(returned.length === count) break;
-
-      // sub = value.slice(this.getByteLength(sub));
-
 
       if(i=== 100) break;
 
@@ -389,8 +391,7 @@ export class Packstream {
 				return markerLow;
 		}
 
-    if(between(marker, 0xf0, 0xff)) return -16 + markerLow;
-    if(between(marker, 0, 16)) return marker;
+    if(between(marker, 0xf0, 0xff) || between(marker, 0, 16)) return 1;
 
 		switch (marker) {
       case NULL_MARKER:
@@ -415,7 +416,7 @@ export class Packstream {
 			}
 		}
 
-		return -1;
+		return 1;
 	}
 
 	hello(): Uint8Array {
