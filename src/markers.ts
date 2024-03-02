@@ -1,3 +1,5 @@
+export const NULL_MARKER = 0xc0;
+
 export enum INT_TYPES {
   INT_8 = 0xc8,
   INT_16 = 0xc9,

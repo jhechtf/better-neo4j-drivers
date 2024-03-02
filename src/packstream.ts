@@ -1,51 +1,5 @@
-import { between } from './util/helpers';
-
-export const HELLO = 0x01;
-export const GOODBYE = 0x02;
-export const RESET = 0x0f;
-export const RUN = 0x10;
-export const DISCARD = 0x2f;
-export const PULL = 0x3f;
-export const BEGIN = 0x11;
-export const COMMIT = 0x12;
-export const ROLLBACK = 0x13;
-export const SUCCESS = 0x70;
-export const IGNORED = 0x7e;
-export const FAILURE = 0x7f;
-export const RECORD = 0x71;
-
-export enum INT_TYPES {
-	INT_8 = 0xc8,
-	INT_16 = 0xc9,
-	INT_32 = 0xca,
-	INT_64 = 0xcb,
-}
-
-export enum BYTE_TYPES {
-	BYTE_8 = 0xcc,
-	BYTE_16 = 0xcd,
-	BYTE_32 = 0xce,
-}
-
-export const DICT_BASE = 0xa0;
-
-export const FLOAT_MARKER = 0xc1;
-
-export enum STRING_TYPES {
-	// Strings > 15 bytes
-	STRING_255 = 0xd0,
-	STRING_65535 = 0xd1,
-	STRING_2147483647 = 0xd2,
-	// Strings < 15 bytes
-	TINY_STRING = 0x80,
-}
-
-export enum LIST_TYPES {
-	LIST_BASE = 0x90,
-	LIST_8 = 0xd4,
-	LIST_16 = 0xd5,
-	LIST_32 = 0xd6,
-}
+import { NULL_MARKER, INT_TYPES, BYTE_TYPES, DICT_BASE, FLOAT_MARKER, STRING_TYPES, LIST_TYPES, MESSAGES } from './markers';
+import { between, mergeUint8Arrays } from './util/helpers';
 
 export const SHARED_HEADERS = {
 	user_agent: 'BetterDrivers/1.0.0',
@@ -60,7 +14,7 @@ export class Packstream {
 		this.decoder = new TextDecoder();
 	}
 
-	package<T extends boolean | null | string | Record<string, unknown> | number>(
+	package<T>(
 		message: T,
 	): Uint8Array {
 		const messageType = 0xc0;
@@ -79,11 +33,20 @@ export class Packstream {
 		return encodedMessage;
 	}
 
-	unpackage<T>(arr: Uint8Array): T {
+	unpackage(arr: Uint8Array): unknown {
 		const byteHigh = arr[0] & 0xf0;
 		const byteLow = arr[0] & 0xf;
 
-		return {} as T;
+    if(between(arr[0], 0xf0, 0xff)) {
+      return -16 + byteLow;
+    }
+    
+    if(between(arr[0], 0, 16)) {
+      return arr[0];
+    }
+
+    return {};
+
 	}
 
 	unpackageNumber(
@@ -254,35 +217,69 @@ export class Packstream {
 	unpackageList(value: Uint8Array): unknown[] {
 		const returned: unknown[] = [];
 		const [marker] = value;
-		let count = 0;
-		let sub = value.slice(0);
-		if (between(marker, 0x90, 0x9f)) {
-			count = marker & 0xf;
-			sub = value.slice(1);
-		} else {
-			count = value[1];
-			sub = value.slice(2);
-		}
-
+    let byteLength = 1;
+		const count = this.getByteLength(value);
+    console.info('COUNT', count);
+    let sub = value.slice(0);
+    if (between(count, 16, 256)) {
+      byteLength = 2;
+    } else if (between(count, 256, 65_536)) {
+      byteLength = 3;
+    } else if (between(count, 65_536, 2_147_483_647)) {
+      byteLength = 5;
+    }
+    
+    console.info('offset by', byteLength);
 		if (count === 0) return [];
 
-		const dv = new DataView(sub.buffer);
+    let i = 0;
+    sub = value.slice(byteLength);
 
-		for (let i = 0; i < count; i++) {
-			console.info(i);
-			if ((sub[i] & 0xf0) === 0xf0) {
-				returned.push((sub[i] & 0xf) - 16);
-				sub.slice();
-			} else if (between(sub[i], 0, 128)) returned.push(sub[i]);
-		}
+    while (returned.length < count) {
+      ++i;
 
-		console.info('RETURNED', returned);
+      console.info('sub', i, sub);
+
+      const b = this.unpackage(sub);
+
+      returned.push(b);
+
+      const bLength = this.getByteLength(sub);
+
+      console.info('byteLength', bLength);
+      sub = sub.slice(bLength);
+      if(returned.length === count) break;
+
+      // sub = value.slice(this.getByteLength(sub));
+
+
+      if(i=== 100) break;
+
+    }
+
+
 		return returned;
 	}
 
 	packageList<T>(values: T[]): Uint8Array {
 		let byteMarker = LIST_TYPES.LIST_BASE;
-		if (values.length <= 16) byteMarker = byteMarker + values.length;
+    let sizeMarker = new Uint8Array();
+
+		if (values.length <= 15) byteMarker = byteMarker + values.length;
+    else if(between(values.length, 16, 256)) {
+      sizeMarker = new Uint8Array(1);
+      const dv = new DataView(sizeMarker.buffer);
+      dv.setUint8(0, values.length);
+    } else if (between(values.length, 256, 65_546)) {
+      sizeMarker = new Uint8Array(2);
+      const dv = new DataView(sizeMarker.buffer);
+      dv.setUint16(0, values.length);
+    } else if(between(values.length, 65_536, 2_147_483_648)) {
+      sizeMarker = new Uint8Array(4);
+      const dv = new DataView(sizeMarker.buffer);
+      dv.setUint32(0, values.length);
+    }
+
 		const packagedValues = values.map((v) => {
 			switch (typeof v) {
 				case 'number':
@@ -295,19 +292,11 @@ export class Packstream {
 				case 'boolean':
 					return this.packageBoolean(v);
 				default:
-					return Uint8Array.from([0]);
+					return Uint8Array.from([NULL_MARKER]);
 			}
 		});
 
-		const flattened = packagedValues.reduce(
-			(all, current) => {
-				const n = new Uint8Array(all.byteLength + current.byteLength);
-				n.set(all);
-				n.set(current, all.length);
-				return n;
-			},
-			Uint8Array.from([byteMarker]),
-		);
+		const flattened = mergeUint8Arrays(Uint8Array.from([byteMarker]), sizeMarker, ...packagedValues);
 
 		return flattened;
 	}
@@ -371,6 +360,16 @@ export class Packstream {
 		return '';
 	}
 
+  packageNull(): Uint8Array {
+    return Uint8Array.from([0xc0]);
+  }
+
+  unpackageNull(value: Uint8Array) {
+    const [marker] = value;
+    if(marker === 0xc0) return null;
+    throw new Error('Invalid Uint8Array');
+  }
+
 	/**
 	 *
 	 * @description When generically unpacking something, you will occasionally need to know the length of the current item
@@ -390,7 +389,14 @@ export class Packstream {
 				return markerLow;
 		}
 
+    if(between(marker, 0xf0, 0xff)) return -16 + markerLow;
+    if(between(marker, 0, 16)) return marker;
+
 		switch (marker) {
+      case NULL_MARKER:
+      case 0xc2:
+      case 0xc3:
+        return 1;
 			case STRING_TYPES.STRING_255:
 			case LIST_TYPES.LIST_8:
 			case BYTE_TYPES.BYTE_8:

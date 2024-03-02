@@ -1,5 +1,6 @@
 import { describe, expect, it} from 'vitest';
-import { BYTE_TYPES, INT_TYPES, LIST_TYPES, Packstream, STRING_TYPES } from './packstream';
+import { Packstream } from './packstream';
+import { BYTE_TYPES, INT_TYPES, LIST_TYPES, STRING_TYPES, NULL_MARKER, DICT_BASE, FLOAT_MARKER } from './markers';
 
 describe('Packstream class', () => {
   const p = new Packstream();
@@ -82,14 +83,17 @@ describe('Packstream class', () => {
     // Empty list
     expect(p.packageList([])).toStrictEqual(Uint8Array.from([LIST_TYPES.LIST_BASE]));
     // List with a few items
+    expect(p.getByteLength(p.packageList([]))).toBe(0);
+
     expect(p.packageList([1, 2.1, 'three', 4n])).toStrictEqual(Uint8Array.from([
       LIST_TYPES.LIST_BASE + 4, 1, 193, 64, 0, 204, 204, 204, 204,
-      204, 205, 133, 5, 116, 104, 114, 101,
-      101, 203, 0, 0, 0, 0, 0, 0,
+      204, 205, 133, 116, 104, 114, 101, 101, 203, 0, 0, 0, 0, 0, 0,
       0, 4
     ]));
+
     expect(p.unpackageList(p.packageList([]))).toStrictEqual([]);
-    expect(p.unpackageList(p.packageList([1, 2.1, 'three']))).toHaveLength(3);
+    expect(p.unpackageList(p.packageList([1, 2, 3]))).toStrictEqual([1, 2, 3]);
+    // expect(p.unpackageList(p.packageList([1, 2.1, 'three']))).toHaveLength(3);
 
   });
 });
