@@ -38,6 +38,8 @@ export class Packstream {
 		const byteHigh = arr[0] & 0xf0;
 		const byteLow = arr[0] & 0xf;
 
+    console.info(arr);
+
     if(between(arr[0], 0xf0, 0xff)) {
       return -16 + byteLow;
     }
@@ -45,13 +47,23 @@ export class Packstream {
     if(between(arr[0], 0, 16)) {
       return arr[0];
     }
-    console.info(marker);
+    console.info(byteHigh, STRING_TYPES.TINY_STRING);
+    if(byteHigh === STRING_TYPES.TINY_STRING) return this.unpackageString(arr);
+    
     switch(marker) {
       case INT_TYPES.INT_8:
       case INT_TYPES.INT_16:
       case INT_TYPES.INT_32:
       case INT_TYPES.INT_64:
         return this.unpackageNumber(arr);
+
+      case STRING_TYPES.STRING_255:
+      case STRING_TYPES.STRING_65535:
+      case STRING_TYPES.STRING_2147483647:
+        return this.unpackageString(arr);
+
+      case FLOAT_MARKER:
+        return this.unpackageFloat(arr);
     }
 
     return {};
@@ -372,10 +384,39 @@ export class Packstream {
     throw new Error('Invalid Uint8Array');
   }
 
+  getTotalByteLength(value: Uint8Array): number {
+
+    const [marker] = value;
+    let totalExtra = 0;
+
+    switch(marker) {
+      case STRING_TYPES.STRING_255:
+      case LIST_TYPES.LIST_8:
+      case BYTE_TYPES.BYTE_8:
+        totalExtra = 2;
+        break;
+      case STRING_TYPES.STRING_65535:
+      case LIST_TYPES.LIST_16:
+      case BYTE_TYPES.BYTE_16:
+        totalExtra = 3;
+        break;
+      case STRING_TYPES.STRING_2147483647:
+      case LIST_TYPES.LIST_32:
+      case BYTE_TYPES.BYTE_32:
+        totalExtra = 5;
+        break;
+      case FLOAT_MARKER:
+        totalExtra = 1;
+    }
+
+    return totalExtra + this.getByteLength(value);
+  }
+
 	/**
 	 *
 	 * @description When generically unpacking something, you will occasionally need to know the length of the current item
-	 * in order to properly progress the stream forward.
+	 * in order to properly progress the stream forward. __NOTE__: this does **not** include 
+   * the marker bytes, or any size bytes. This is simply the size of the entry itself
 	 * @param value The Uint8 encoded values we are looking at.
 	 * @returns the number of entries in the Uint8Array that the value at the current `marker` takes up
 	 */
@@ -392,6 +433,8 @@ export class Packstream {
 		}
 
     if(between(marker, 0xf0, 0xff) || between(marker, 0, 16)) return 1;
+
+    if(marker === FLOAT_MARKER) return 8;
 
 		switch (marker) {
       case NULL_MARKER:
