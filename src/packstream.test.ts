@@ -94,12 +94,12 @@ describe('Packstream class', () => {
       0, 4
     ]));
 
-    // expect(p.unpackageList(p.packageList([]))).toStrictEqual([]);
-    // expect(p.unpackageList(p.packageList([1, 2, 3]))).toStrictEqual([1, 2, 3]);
-    // expect(p.unpackageList(p.packageList([128]))).toStrictEqual([128]);
-    // expect(p.unpackage(p.packageNumber(-2_147_483_649n))).toBe(-2_147_483_649n);
-    // expect(p.unpackageList(p.packageList([1, 2.1, 'three']))).toHaveLength(3);
-    expect(p.unpackageList(p.packageList([1, 2.1, 'a']))).toStrictEqual([1, 2.1, 'a']);
+    expect(p.unpackageList(p.packageList([]))).toStrictEqual([]);
+    expect(p.unpackageList(p.packageList([1, 2, 3]))).toStrictEqual([1, 2, 3]);
+    expect(p.unpackageList(p.packageList([128]))).toStrictEqual([128]);
+    expect(p.unpackage(p.packageNumber(-2_147_483_649n))).toBe(-2_147_483_649n);
+    expect(p.unpackageList(p.packageList([1, 2.1, 'three']))).toHaveLength(3);
+    // TODO: Add tests for dicts / structures
 
   });
 });
