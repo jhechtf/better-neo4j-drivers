@@ -57,9 +57,9 @@ export class Packstream {
       case INT_TYPES.INT_64:
         return this.unpackageNumber(arr);
 
-      case STRING_TYPES.STRING_255:
-      case STRING_TYPES.STRING_65535:
-      case STRING_TYPES.STRING_2147483647:
+      case STRING_TYPES.STRING_8:
+      case STRING_TYPES.STRING_16:
+      case STRING_TYPES.STRING_32:
         return this.unpackageString(arr);
 
       case FLOAT_MARKER:
@@ -334,17 +334,17 @@ export class Packstream {
     if(encodedMessage.byteLength <= 15) {
       byteMarker += encodedMessage.byteLength;
     } else if (encodedMessage.byteLength < 256) {
-      byteMarker = STRING_TYPES.STRING_255;
+      byteMarker = STRING_TYPES.STRING_8;
       byteLength = new Uint8Array(1);
       const dv = new DataView(byteLength.buffer);
       dv.setUint8(0, encodedMessage.byteLength);
     } else if (encodedMessage.byteLength < 65_536) {
-      byteMarker = STRING_TYPES.STRING_65535;
+      byteMarker = STRING_TYPES.STRING_16;
       byteLength = new Uint8Array(2);
       const dv = new DataView(byteLength.buffer);
       dv.setUint16(0, encodedMessage.byteLength);
     } else if(encodedMessage.length < 2_147_483_648) {
-      byteMarker = STRING_TYPES.STRING_2147483647;
+      byteMarker = STRING_TYPES.STRING_32;
       byteLength = new Uint8Array(4);
       const dv = new DataView(byteLength.buffer);
       dv.setUint32(0, encodedMessage.byteLength);
@@ -361,13 +361,13 @@ export class Packstream {
 		if (marker > 0x80 && marker <= 0x8f)
 			return this.decoder.decode(message.slice(1));
 
-		if (marker === STRING_TYPES.STRING_255) {
+		if (marker === STRING_TYPES.STRING_8) {
 			return this.decoder.decode(message.slice(2));
 			// biome-ignore lint/style/noUselessElse: <explanation>
-		} else if (marker === STRING_TYPES.STRING_65535) {
+		} else if (marker === STRING_TYPES.STRING_16) {
 			return this.decoder.decode(message.slice(4));
 			// biome-ignore lint/style/noUselessElse: <explanation>
-		} else if (marker === STRING_TYPES.STRING_2147483647) {
+		} else if (marker === STRING_TYPES.STRING_32) {
 			return this.decoder.decode(message.slice(6));
 		}
 
@@ -384,23 +384,29 @@ export class Packstream {
     throw new Error('Invalid Uint8Array');
   }
 
-  getTotalByteLength(value: Uint8Array): number {
+  /**
+   * @description returns the number lead bytes (byte marker + optional size)
+   * which can range from 1 to 5 in most cases.
+   * @param value 
+   * @returns 
+   */
+  getLeadByteLength(value: Uint8Array): number {
 
     const [marker] = value;
     let totalExtra = 0;
 
     switch(marker) {
-      case STRING_TYPES.STRING_255:
+      case STRING_TYPES.STRING_8:
       case LIST_TYPES.LIST_8:
       case BYTE_TYPES.BYTE_8:
         totalExtra = 2;
         break;
-      case STRING_TYPES.STRING_65535:
+      case STRING_TYPES.STRING_16:
       case LIST_TYPES.LIST_16:
       case BYTE_TYPES.BYTE_16:
         totalExtra = 3;
         break;
-      case STRING_TYPES.STRING_2147483647:
+      case STRING_TYPES.STRING_32:
       case LIST_TYPES.LIST_32:
       case BYTE_TYPES.BYTE_32:
         totalExtra = 5;
@@ -409,7 +415,7 @@ export class Packstream {
         totalExtra = 1;
     }
 
-    return totalExtra + this.getByteLength(value);
+    return totalExtra;
   }
 
 	/**
@@ -441,17 +447,17 @@ export class Packstream {
       case 0xc2:
       case 0xc3:
         return 1;
-			case STRING_TYPES.STRING_255:
+			case STRING_TYPES.STRING_8:
 			case LIST_TYPES.LIST_8:
 			case BYTE_TYPES.BYTE_8:
 				return value[1];
-			case STRING_TYPES.STRING_65535:
+			case STRING_TYPES.STRING_16:
 			case LIST_TYPES.LIST_16:
 			case BYTE_TYPES.BYTE_16: {
 				const dv = new DataView(value.buffer, 1);
 				return dv.getUint16(0);
 			}
-			case STRING_TYPES.STRING_2147483647:
+			case STRING_TYPES.STRING_32:
 			case LIST_TYPES.LIST_32:
 			case BYTE_TYPES.BYTE_32: {
 				const dv = new DataView(value.buffer, 1);
@@ -460,17 +466,5 @@ export class Packstream {
 		}
 
 		return 1;
-	}
-
-	hello(): Uint8Array {
-		return Uint8Array.from([HELLO]);
-	}
-
-	goodbye(): Uint8Array {
-		return Uint8Array.from([GOODBYE]);
-	}
-
-	failure(): Uint8Array {
-		return Uint8Array.from([FAILURE]);
 	}
 }

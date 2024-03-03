@@ -19,9 +19,9 @@ export const FLOAT_MARKER = 0xc1;
 
 export enum STRING_TYPES {
   // Strings > 15 bytes
-  STRING_255 = 0xd0,
-  STRING_65535 = 0xd1,
-  STRING_2147483647 = 0xd2,
+  STRING_8 = 0xd0,
+  STRING_16 = 0xd1,
+  STRING_32 = 0xd2,
   // Strings < 15 bytes
   TINY_STRING = 0x80,
 }
