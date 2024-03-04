@@ -8,6 +8,7 @@ import {
 	NULL_MARKER,
 	DICT_BASE,
 	FLOAT_MARKER,
+	DICT_TYPES,
 } from './markers';
 
 describe('Packstream class', () => {
@@ -118,6 +119,7 @@ describe('Packstream class', () => {
 		expect(p.packageBytes(Uint8Array.from(muchBytes))).toStrictEqual(
 			Uint8Array.from([BYTE_TYPES.BYTE_16, 1, 0, ...muchBytes]),
 		);
+
 		expect(p.getByteLength(p.packageBytes(Uint8Array.from(muchBytes)))).toBe(
 			256,
 		);
@@ -127,6 +129,10 @@ describe('Packstream class', () => {
 		expect(
 			p.unpackageBytes(p.packageBytes(Uint8Array.from(muchBytes))),
 		).toStrictEqual(Uint8Array.from(muchBytes));
+
+		expect(
+			p.unpackageBytes(p.packageBytes(Uint8Array.from([])))
+		).toStrictEqual(Uint8Array.from([]));
 	});
 
 	it('Works with lists', () => {
@@ -196,5 +202,34 @@ describe('Packstream class', () => {
 		expect(p.unpackageList(p.packageList([null, 1]))).toStrictEqual([null, 1]);
 
 		// TODO: Add tests for dicts / structures
+	});
+
+	it('Dictionaries', () => {
+		// Basic ones
+		expect(p.packageDict({})).toStrictEqual(Uint8Array.from([DICT_TYPES.TINY_DICT]));
+		expect(p.packageDict({ one: 'eins'})).toStrictEqual(Uint8Array.from([0xA1, 0x83, 0x6F, 0x6E, 0x65, 0x84, 0x65, 0x69, 0x6E, 0x73]));
+		// Something something
+		const alphaBetNumbers = Array.from({ length: 26 }, (_, i) => i + 1);
+		const alphabetObj = Object.fromEntries(
+			alphaBetNumbers.map(v => [String.fromCharCode(v + 64), v])
+		);
+		expect(p.packageDict({A: 1})).toStrictEqual(Uint8Array.from([
+			161, 0x81, 0x41, 0x01
+		]))
+		expect(p.packageDict(alphabetObj)).toStrictEqual(Uint8Array.from([
+			0xD8, 0x1A,
+			0x81, 0x41, 0x01, 0x81, 0x42, 0x02, 0x81, 0x43, 0x03, 0x81, 0x44, 0x04,
+			0x81, 0x45, 0x05, 0x81, 0x46, 0x06, 0x81, 0x47, 0x07, 0x81, 0x48, 0x08,
+			0x81, 0x49, 0x09, 0x81, 0x4A, 0x0A, 0x81, 0x4B, 0x0B, 0x81, 0x4C, 0x0C,
+			0x81, 0x4D, 0x0D, 0x81, 0x4E, 0x0E, 0x81, 0x4F, 0x0F, 0x81, 0x50, 0x10,
+			0x81, 0x51, 0x11, 0x81, 0x52, 0x12, 0x81, 0x53, 0x13, 0x81, 0x54, 0x14,
+			0x81, 0x55, 0x15, 0x81, 0x56, 0x16, 0x81, 0x57, 0x17, 0x81, 0x58, 0x18,
+			0x81, 0x59, 0x19, 0x81, 0x5A, 0x1A
+		]));
+
+		expect(p.unpackage(Uint8Array.from([1]))).toBe(1);
+
+		// expect(p.unpackageDict(p.packageDict({ A: 1 }))).toStrictEqual({ A: 1 });
+		expect(p.unpackageDict(p.packageDict(alphabetObj))).toStrictEqual(alphabetObj);
 	});
 });
