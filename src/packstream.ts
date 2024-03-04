@@ -4,7 +4,7 @@ import {
 	INT_TYPES,
 	LIST_TYPES,
 	NULL_MARKER,
-	STRING_TYPES
+	STRING_TYPES,
 } from './markers';
 import { between, mergeUint8Arrays } from './util/helpers';
 
@@ -35,7 +35,7 @@ export class Packstream {
 			return this.packageBoolean(message);
 		}
 
-		if(message instanceof Uint8Array) {
+		if (message instanceof Uint8Array) {
 			return this.packageBytes(message);
 		}
 
@@ -56,8 +56,6 @@ export class Packstream {
 		if (between(arr[0], 0, 16)) {
 			return arr[0];
 		}
-
-		console.info(marker, BYTE_TYPES);
 
 		if (byteHigh === STRING_TYPES.TINY_STRING) return this.unpackageString(arr);
 
@@ -252,7 +250,7 @@ export class Packstream {
 		const dv = new DataView(value.slice(1).buffer);
 		let size = 1;
 
-		switch(marker) {
+		switch (marker) {
 			case BYTE_TYPES.BYTE_16:
 				size = 2;
 				break;
@@ -261,7 +259,7 @@ export class Packstream {
 				break;
 		}
 
-		return value.slice(1+size);
+		return value.slice(1 + size);
 	}
 
 	unpackageList(value: Uint8Array): unknown[] {
@@ -323,7 +321,7 @@ export class Packstream {
 		}
 
 		const packagedValues = values.map((v) => {
-			if(v instanceof Uint8Array) return this.packageBytes(v);
+			if (v instanceof Uint8Array) return this.packageBytes(v);
 			switch (typeof v) {
 				case 'number':
 					if (v % 1 !== 0) return this.packageFloat(v);

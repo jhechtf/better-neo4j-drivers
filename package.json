@@ -5,8 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest",
+    "test:ci": "vitest run",
     "lint": "biome lint --apply src/",
-    "format": "biome format src/"
+    "lint:check": "biome lint src/",
+    "format": "biome format --write src/",
+    "format:check": "biome format src/"
   },
   "exports": {
     ".": "./src/index.ts"
