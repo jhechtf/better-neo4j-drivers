@@ -80,6 +80,8 @@ describe('Packstream class', () => {
       ])
     );
     expect(p.getByteLength(p.packageBytes(Uint8Array.from(muchBytes)))).toBe(256);
+    expect(p.unpackageBytes(p.packageBytes(Uint8Array.from([1,2,3])))).toStrictEqual(Uint8Array.from([1,2,3]));
+    expect(p.unpackageBytes(p.packageBytes(Uint8Array.from(muchBytes)))).toStrictEqual(Uint8Array.from(muchBytes));
   });
 
   it('Works with lists', () => {
@@ -93,13 +95,28 @@ describe('Packstream class', () => {
       204, 205, 133, 116, 104, 114, 101, 101, 203, 0, 0, 0, 0, 0, 0,
       0, 4
     ]));
-
+    // Empty list
     expect(p.unpackageList(p.packageList([]))).toStrictEqual([]);
+    // List with a few items
     expect(p.unpackageList(p.packageList([1, 2, 3]))).toStrictEqual([1, 2, 3]);
+    // List with a single item
     expect(p.unpackageList(p.packageList([128]))).toStrictEqual([128]);
+    // TODO: move this to the correct space
     expect(p.unpackage(p.packageNumber(-2_147_483_649n))).toBe(-2_147_483_649n);
+    // list with 3 items of different types
     expect(p.unpackageList(p.packageList([1, 2.1, 'three']))).toHaveLength(3);
-    // TODO: Add tests for dicts / structures
+    expect(p.unpackageList(p.packageList([1, 2.1, 'three']))).toStrictEqual([1,2.1, 'three']);
+
+    // list with a bob
+
+    expect(p.unpackageList(p.packageList([Uint8Array.from([0])]))).toStrictEqual([Uint8Array.from([0])])
+    expect(p.unpackageList(p.packageList([1, 2.1, Uint8Array.from([])]))).toStrictEqual([
+      1,
+      2.1,
+      Uint8Array.from([])
+    ])
+
+    // TODO: Add tests for dicts / structures 
 
   });
 });
