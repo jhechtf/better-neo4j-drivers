@@ -107,14 +107,17 @@ describe('Packstream class', () => {
     expect(p.unpackageList(p.packageList([1, 2.1, 'three']))).toHaveLength(3);
     expect(p.unpackageList(p.packageList([1, 2.1, 'three']))).toStrictEqual([1,2.1, 'three']);
 
-    // list with a bob
+    // list with raw byte entries
 
     expect(p.unpackageList(p.packageList([Uint8Array.from([0])]))).toStrictEqual([Uint8Array.from([0])])
     expect(p.unpackageList(p.packageList([1, 2.1, Uint8Array.from([])]))).toStrictEqual([
       1,
       2.1,
       Uint8Array.from([])
-    ])
+    ]);
+
+    // Lists with null
+    expect(p.unpackageList(p.packageList([null, 1]))).toStrictEqual([null, 1]);
 
     // TODO: Add tests for dicts / structures 
 

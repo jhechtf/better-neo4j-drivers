@@ -25,7 +25,7 @@ export class Packstream {
 		const messageType = 0xc0;
 		const encodedMessage: Uint8Array = Uint8Array.from([messageType]);
 		// get the null
-		if (message == null) return Uint8Array.from([0xc0]);
+		if (message == null) return this.packageNull();
 		// if string...
 		if (typeof message === 'string') {
 			return this.packageString(message);
@@ -46,6 +46,8 @@ export class Packstream {
 		const [marker] = arr;
 		const byteHigh = arr[0] & 0xf0;
 		const byteLow = arr[0] & 0xf;
+
+		if (marker === NULL_MARKER) return null;
 
 		if (between(arr[0], 0xf0, 0xff)) {
 			return -16 + byteLow;
