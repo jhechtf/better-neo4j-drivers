@@ -229,7 +229,16 @@ describe('Packstream class', () => {
 
 		expect(p.unpackage(Uint8Array.from([1]))).toBe(1);
 
-		// expect(p.unpackageDict(p.packageDict({ A: 1 }))).toStrictEqual({ A: 1 });
+		expect(p.unpackageDict(p.packageDict({ A: 1 }))).toStrictEqual({ A: 1 });
 		expect(p.unpackageDict(p.packageDict(alphabetObj))).toStrictEqual(alphabetObj);
+
+    const nestedObj = {
+      a: 1,
+      b: 2,
+      c: [1,2,3]
+    };
+
+    console.info(p.packageDict(nestedObj));
+    expect(p.unpackageDict(p.packageDict(nestedObj))).toStrictEqual(nestedObj);
 	});
 });
