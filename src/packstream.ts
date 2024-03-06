@@ -440,6 +440,12 @@ export class Packstream {
 		let totalExtra = 0;
 
 		switch (marker) {
+      case INT_TYPES.INT_8:
+      case INT_TYPES.INT_16:
+      case INT_TYPES.INT_32:
+      case INT_TYPES.INT_64:
+        totalExtra = 1;
+        break;
 			case STRING_TYPES.STRING_8:
 			case LIST_TYPES.LIST_8:
 			case BYTE_TYPES.BYTE_8:
@@ -490,7 +496,14 @@ export class Packstream {
 			case NULL_MARKER:
 			case 0xc2:
 			case 0xc3:
+      case INT_TYPES.INT_8:
 				return 1;
+      case INT_TYPES.INT_16:
+        return 2;
+      case INT_TYPES.INT_32:
+        return 4;
+      case INT_TYPES.INT_64:
+        return 8;
 			case STRING_TYPES.STRING_8:
 			case LIST_TYPES.LIST_8:
 			case BYTE_TYPES.BYTE_8:
@@ -555,8 +568,7 @@ export class Packstream {
 		let sub = value.slice(1);
 
 		if(markerHigh === DICT_TYPES.TINY_DICT) {
-			entriesCount = markerLow;
-			sub.slice(1);
+			entriesCount = markerLow;			
 		}
 
 		switch(marker) {
@@ -589,7 +601,7 @@ export class Packstream {
 			let markerMeta = this.getLeadByteLength(sub);
 			let byteLength = this.getByteLength(sub);
 			const key = this.unpackage(sub);
-			if(typeof key !== 'string') throw new Error('Key is not the correct type: '+key)
+			if(typeof key !== 'string') throw new Error(`Key is not the correct type: ${key}`);
 			sub = sub.slice(byteLength + markerMeta + 1);
 			markerMeta = this.getLeadByteLength(sub);
 			byteLength = this.getByteLength(sub);
@@ -600,4 +612,22 @@ export class Packstream {
 
 		return Object.fromEntries(entries);
 	}
+
+  /**
+   * @description Returns all of the bytes taken up by a structure
+   * @param value 
+   * @returns 
+   */
+  getTotalBytes(value: Uint8Array): number {
+    const [marker] = value;
+    const leadBytes = this.getLeadByteLength(value);
+    const regularBytes = this.getByteLength(value);
+
+    if(![DICT_TYPES.TINY_DICT, LIST_TYPES.LIST_BASE].includes(marker & 0xf0)) return leadBytes + regularBytes;
+
+    // Ok so how do we do lists and dictionaries...
+
+    
+    return leadBytes;
+  }
 }
