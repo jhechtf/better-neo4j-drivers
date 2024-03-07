@@ -319,5 +319,14 @@ describe('Packstream class', () => {
     it('Works for null', () => {
       expect(p.getTotalBytes(p.packageNull())).toBe(1);
     });
+
+    describe('Works for lists', () => {
+      it('Works for small lists', () => {
+        expect(p.getTotalBytes(p.packageList([1]))).toBe(2);
+        expect(p.getTotalBytes(p.packageList([1, 2, 3]))).toBe(4);
+        expect(p.getTotalBytes(p.packageList(['a', 'b', 'c']))).toBe(7);
+        expect(p.getTotalBytes(p.packageList(['one', 'two', 'three']))).toBe(15);
+      });
+    });
   });
 });

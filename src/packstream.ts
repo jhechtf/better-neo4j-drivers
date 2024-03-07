@@ -437,7 +437,11 @@ export class Packstream {
 	 */
 	getLeadByteLength(value: Uint8Array): number {
 		const [marker] = value;
+    const markerHigh = marker & 0xf0;
 		let totalExtra = 0;
+
+
+    if([DICT_TYPES.TINY_DICT, LIST_TYPES.LIST_BASE].includes(markerHigh)) return 1;
 
 		switch (marker) {
       case INT_TYPES.INT_8:
@@ -626,8 +630,27 @@ export class Packstream {
     if(![DICT_TYPES.TINY_DICT, LIST_TYPES.LIST_BASE].includes(marker & 0xf0)) return leadBytes + regularBytes;
 
     // Ok so how do we do lists and dictionaries...
+    /**
+     * Since lists and dictionaries are dynamic in length, the total bytes is going to be 
+     * more complicated to determine because the length given in the byte is simply the number
+     * of items in the list, or key/value pairs in the dict.
+     * 
+     * This means that the length of the items in those things is unknown based 
+     * solely on the marker bytes.
+     */
 
+    let totalBytes = leadBytes;
+    let arr = value.slice(leadBytes);
+    while(arr.length > 0) {
+      const tmpBytes = this.getTotalBytes(arr);
+      totalBytes += tmpBytes;
+
+      arr = arr.slice(tmpBytes);
+      if(arr.length === 0) break;
+    }
+
+    console.info(totalBytes);
     
-    return leadBytes;
+    return totalBytes;
   }
 }
