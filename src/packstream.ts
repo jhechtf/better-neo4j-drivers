@@ -40,11 +40,11 @@ export class Packstream {
 			return this.packageBytes(message);
 		}
 
-		if(typeof message === 'number') {
+		if (typeof message === 'number') {
 			return this.packageNumber(message);
 		}
 
-		if(Array.isArray(message)) {
+		if (Array.isArray(message)) {
 			return this.packageList(message);
 		}
 
@@ -407,13 +407,13 @@ export class Packstream {
 		const dv = new DataView(message.buffer);
 
 		if (marker === STRING_TYPES.STRING_8) {
-			return this.decoder.decode(message.slice(2, dv.getUint8(1)+3));
+			return this.decoder.decode(message.slice(2, dv.getUint8(1) + 3));
 			// biome-ignore lint/style/noUselessElse: <explanation>
 		} else if (marker === STRING_TYPES.STRING_16) {
-			return this.decoder.decode(message.slice(4, dv.getUint16(1)+5));
+			return this.decoder.decode(message.slice(4, dv.getUint16(1) + 5));
 			// biome-ignore lint/style/noUselessElse: <explanation>
 		} else if (marker === STRING_TYPES.STRING_32) {
-			return this.decoder.decode(message.slice(6, dv.getUint32(1)+7));
+			return this.decoder.decode(message.slice(6, dv.getUint32(1) + 7));
 		}
 
 		return '';
@@ -437,19 +437,19 @@ export class Packstream {
 	 */
 	getLeadByteLength(value: Uint8Array): number {
 		const [marker] = value;
-    const markerHigh = marker & 0xf0;
+		const markerHigh = marker & 0xf0;
 		let totalExtra = 0;
 
-
-    if([DICT_TYPES.TINY_DICT, LIST_TYPES.LIST_BASE].includes(markerHigh)) return 1;
+		if ([DICT_TYPES.TINY_DICT, LIST_TYPES.LIST_BASE].includes(markerHigh))
+			return 1;
 
 		switch (marker) {
-      case INT_TYPES.INT_8:
-      case INT_TYPES.INT_16:
-      case INT_TYPES.INT_32:
-      case INT_TYPES.INT_64:
-        totalExtra = 1;
-        break;
+			case INT_TYPES.INT_8:
+			case INT_TYPES.INT_16:
+			case INT_TYPES.INT_32:
+			case INT_TYPES.INT_64:
+				totalExtra = 1;
+				break;
 			case STRING_TYPES.STRING_8:
 			case LIST_TYPES.LIST_8:
 			case BYTE_TYPES.BYTE_8:
@@ -500,14 +500,14 @@ export class Packstream {
 			case NULL_MARKER:
 			case 0xc2:
 			case 0xc3:
-      case INT_TYPES.INT_8:
+			case INT_TYPES.INT_8:
 				return 1;
-      case INT_TYPES.INT_16:
-        return 2;
-      case INT_TYPES.INT_32:
-        return 4;
-      case INT_TYPES.INT_64:
-        return 8;
+			case INT_TYPES.INT_16:
+				return 2;
+			case INT_TYPES.INT_32:
+				return 4;
+			case INT_TYPES.INT_64:
+				return 8;
 			case STRING_TYPES.STRING_8:
 			case LIST_TYPES.LIST_8:
 			case BYTE_TYPES.BYTE_8:
@@ -530,37 +530,35 @@ export class Packstream {
 	}
 
 	packageDict<T extends Record<string, unknown>>(value: T): Uint8Array {
-		const keys = Object.keys(value).filter(k => typeof k === 'string');
+		const keys = Object.keys(value).filter((k) => typeof k === 'string');
 		let byteMaker = DICT_TYPES.TINY_DICT;
 		let sizeBytes: Uint8Array;
 
-		if(keys.length <= 15) {
+		if (keys.length <= 15) {
 			byteMaker += keys.length;
 			sizeBytes = new Uint8Array();
-		}
-		else if(between(keys.length, 16, 256)) {
+		} else if (between(keys.length, 16, 256)) {
 			byteMaker = DICT_TYPES.DICT_8;
 			sizeBytes = new Uint8Array(1);
 			const dv = new DataView(sizeBytes.buffer);
 			dv.setUint8(0, keys.length);
-		}
-		else if(between(keys.length, 256, 65_536)) {
+		} else if (between(keys.length, 256, 65_536)) {
 			byteMaker = DICT_TYPES.DICT_16;
 			sizeBytes = new Uint8Array(2);
 			const dv = new DataView(sizeBytes.buffer);
 			dv.setUint16(0, keys.length);
-		}
-		else if(between(keys.length, 65_536, 2_147_483_648)) {
+		} else if (between(keys.length, 65_536, 2_147_483_648)) {
 			byteMaker = DICT_TYPES.DICT_32;
 			sizeBytes = new Uint8Array(4);
 			const dv = new DataView(sizeBytes.buffer);
 			dv.setUint32(0, keys.length);
-		}
-		else sizeBytes = new Uint8Array();
+		} else sizeBytes = new Uint8Array();
 
-		const baseThingies = mergeUint8Arrays(...keys.flatMap(k => [this.package(k), this.package(value[k])]));
+		const baseThingies = mergeUint8Arrays(
+			...keys.flatMap((k) => [this.package(k), this.package(value[k])]),
+		);
 
-		return Uint8Array.from([ byteMaker, ...sizeBytes, ...baseThingies ]);
+		return Uint8Array.from([byteMaker, ...sizeBytes, ...baseThingies]);
 	}
 
 	unpackageDict(value: Uint8Array): Record<string, unknown> {
@@ -571,11 +569,11 @@ export class Packstream {
 
 		let sub = value.slice(1);
 
-		if(markerHigh === DICT_TYPES.TINY_DICT) {
-			entriesCount = markerLow;			
+		if (markerHigh === DICT_TYPES.TINY_DICT) {
+			entriesCount = markerLow;
 		}
 
-		switch(marker) {
+		switch (marker) {
 			case DICT_TYPES.DICT_8: {
 				const dv = new DataView(sub.buffer);
 				entriesCount = dv.getUint8(0);
@@ -601,11 +599,12 @@ export class Packstream {
 
 		console.info('Entries count', entriesCount);
 
-		while(entries.length < entriesCount && sub.length > 0) {
+		while (entries.length < entriesCount && sub.length > 0) {
 			let markerMeta = this.getLeadByteLength(sub);
 			let byteLength = this.getByteLength(sub);
 			const key = this.unpackage(sub);
-			if(typeof key !== 'string') throw new Error(`Key is not the correct type: ${key}`);
+			if (typeof key !== 'string')
+				throw new Error(`Key is not the correct type: ${key}`);
 			sub = sub.slice(byteLength + markerMeta + 1);
 			markerMeta = this.getLeadByteLength(sub);
 			byteLength = this.getByteLength(sub);
@@ -617,40 +616,41 @@ export class Packstream {
 		return Object.fromEntries(entries);
 	}
 
-  /**
-   * @description Returns all of the bytes taken up by a structure
-   * @param value 
-   * @returns 
-   */
-  getTotalBytes(value: Uint8Array): number {
-    const [marker] = value;
-    const leadBytes = this.getLeadByteLength(value);
-    const regularBytes = this.getByteLength(value);
+	/**
+	 * @description Returns all of the bytes taken up by a structure
+	 * @param value
+	 * @returns
+	 */
+	getTotalBytes(value: Uint8Array): number {
+		const [marker] = value;
+		const leadBytes = this.getLeadByteLength(value);
+		const regularBytes = this.getByteLength(value);
 
-    if(![DICT_TYPES.TINY_DICT, LIST_TYPES.LIST_BASE].includes(marker & 0xf0)) return leadBytes + regularBytes;
+		if (![DICT_TYPES.TINY_DICT, LIST_TYPES.LIST_BASE].includes(marker & 0xf0))
+			return leadBytes + regularBytes;
 
-    // Ok so how do we do lists and dictionaries...
-    /**
-     * Since lists and dictionaries are dynamic in length, the total bytes is going to be 
-     * more complicated to determine because the length given in the byte is simply the number
-     * of items in the list, or key/value pairs in the dict.
-     * 
-     * This means that the length of the items in those things is unknown based 
-     * solely on the marker bytes.
-     */
+		// Ok so how do we do lists and dictionaries...
+		/**
+		 * Since lists and dictionaries are dynamic in length, the total bytes is going to be
+		 * more complicated to determine because the length given in the byte is simply the number
+		 * of items in the list, or key/value pairs in the dict.
+		 *
+		 * This means that the length of the items in those things is unknown based
+		 * solely on the marker bytes.
+		 */
 
-    let totalBytes = leadBytes;
-    let arr = value.slice(leadBytes);
-    while(arr.length > 0) {
-      const tmpBytes = this.getTotalBytes(arr);
-      totalBytes += tmpBytes;
+		let totalBytes = leadBytes;
+		let arr = value.slice(leadBytes);
+		while (arr.length > 0) {
+			const tmpBytes = this.getTotalBytes(arr);
+			totalBytes += tmpBytes;
 
-      arr = arr.slice(tmpBytes);
-      if(arr.length === 0) break;
-    }
+			arr = arr.slice(tmpBytes);
+			if (arr.length === 0) break;
+		}
 
-    console.info(totalBytes);
-    
-    return totalBytes;
-  }
+		console.info(totalBytes);
+
+		return totalBytes;
+	}
 }

@@ -130,9 +130,9 @@ describe('Packstream class', () => {
 			p.unpackageBytes(p.packageBytes(Uint8Array.from(muchBytes))),
 		).toStrictEqual(Uint8Array.from(muchBytes));
 
-		expect(
-			p.unpackageBytes(p.packageBytes(Uint8Array.from([])))
-		).toStrictEqual(Uint8Array.from([]));
+		expect(p.unpackageBytes(p.packageBytes(Uint8Array.from([])))).toStrictEqual(
+			Uint8Array.from([]),
+		);
 	});
 
 	it('Works with lists', () => {
@@ -206,127 +206,168 @@ describe('Packstream class', () => {
 
 	it('Dictionaries', () => {
 		// Basic ones
-		expect(p.packageDict({})).toStrictEqual(Uint8Array.from([DICT_TYPES.TINY_DICT]));
-		expect(p.packageDict({ one: 'eins'})).toStrictEqual(Uint8Array.from([0xA1, 0x83, 0x6F, 0x6E, 0x65, 0x84, 0x65, 0x69, 0x6E, 0x73]));
+		expect(p.packageDict({})).toStrictEqual(
+			Uint8Array.from([DICT_TYPES.TINY_DICT]),
+		);
+		expect(p.packageDict({ one: 'eins' })).toStrictEqual(
+			Uint8Array.from([
+				0xa1, 0x83, 0x6f, 0x6e, 0x65, 0x84, 0x65, 0x69, 0x6e, 0x73,
+			]),
+		);
 		// Something something
 		const alphaBetNumbers = Array.from({ length: 26 }, (_, i) => i + 1);
 		const alphabetObj = Object.fromEntries(
-			alphaBetNumbers.map(v => [String.fromCharCode(v + 64), v])
+			alphaBetNumbers.map((v) => [String.fromCharCode(v + 64), v]),
 		);
-		expect(p.packageDict({A: 1})).toStrictEqual(Uint8Array.from([
-			161, 0x81, 0x41, 0x01
-		]))
-		expect(p.packageDict(alphabetObj)).toStrictEqual(Uint8Array.from([
-			0xD8, 0x1A,
-			0x81, 0x41, 0x01, 0x81, 0x42, 0x02, 0x81, 0x43, 0x03, 0x81, 0x44, 0x04,
-			0x81, 0x45, 0x05, 0x81, 0x46, 0x06, 0x81, 0x47, 0x07, 0x81, 0x48, 0x08,
-			0x81, 0x49, 0x09, 0x81, 0x4A, 0x0A, 0x81, 0x4B, 0x0B, 0x81, 0x4C, 0x0C,
-			0x81, 0x4D, 0x0D, 0x81, 0x4E, 0x0E, 0x81, 0x4F, 0x0F, 0x81, 0x50, 0x10,
-			0x81, 0x51, 0x11, 0x81, 0x52, 0x12, 0x81, 0x53, 0x13, 0x81, 0x54, 0x14,
-			0x81, 0x55, 0x15, 0x81, 0x56, 0x16, 0x81, 0x57, 0x17, 0x81, 0x58, 0x18,
-			0x81, 0x59, 0x19, 0x81, 0x5A, 0x1A
-		]));
-
+		expect(p.packageDict({ A: 1 })).toStrictEqual(
+			Uint8Array.from([161, 0x81, 0x41, 0x01]),
+		);
+		expect(p.packageDict(alphabetObj)).toStrictEqual(
+			Uint8Array.from([
+				0xd8, 0x1a, 0x81, 0x41, 0x01, 0x81, 0x42, 0x02, 0x81, 0x43, 0x03, 0x81,
+				0x44, 0x04, 0x81, 0x45, 0x05, 0x81, 0x46, 0x06, 0x81, 0x47, 0x07, 0x81,
+				0x48, 0x08, 0x81, 0x49, 0x09, 0x81, 0x4a, 0x0a, 0x81, 0x4b, 0x0b, 0x81,
+				0x4c, 0x0c, 0x81, 0x4d, 0x0d, 0x81, 0x4e, 0x0e, 0x81, 0x4f, 0x0f, 0x81,
+				0x50, 0x10, 0x81, 0x51, 0x11, 0x81, 0x52, 0x12, 0x81, 0x53, 0x13, 0x81,
+				0x54, 0x14, 0x81, 0x55, 0x15, 0x81, 0x56, 0x16, 0x81, 0x57, 0x17, 0x81,
+				0x58, 0x18, 0x81, 0x59, 0x19, 0x81, 0x5a, 0x1a,
+			]),
+		);
 
 		// expect(p.unpackageDict(p.packageDict({ A: 1 }))).toStrictEqual({ A: 1 });
 		// expect(p.unpackageDict(p.packageDict(alphabetObj))).toStrictEqual(alphabetObj);
 
-    const nestedObj = {
-      a: 1,
-      b: 2,
-      c: [1,2,3]
-    };
+		const nestedObj = {
+			a: 1,
+			b: 2,
+			c: [1, 2, 3],
+		};
 
-    console.info(p.packageDict(nestedObj));
-    expect(p.unpackageDict(p.packageDict(nestedObj))).toStrictEqual(nestedObj);
+		console.info(p.packageDict(nestedObj));
+		expect(p.unpackageDict(p.packageDict(nestedObj))).toStrictEqual(nestedObj);
 	});
 
-  describe('getTotalBytes', () => {
-    describe('Numbers', () => {
-      it('gets the correct amount of bytes for positive numbers', () => {
-        expect(p.getTotalBytes(p.packageNumber(15))).toBe(1);
-        expect(p.getTotalBytes(p.packageNumber(200))).toBe(2);
-        expect(p.getTotalBytes(p.packageNumber(32_767))).toBe(3);
-        expect(p.getTotalBytes(p.packageNumber(32_768))).toBe(5);
-        expect(p.getTotalBytes(p.packageNumber(2_147_483_648))).toBe(9);
-      });
-      it('gets the correct amount of bytes for negative numbers', () => {
-        expect(p.getTotalBytes(p.packageNumber(-16))).toBe(1);
-        expect(p.getTotalBytes(p.packageNumber(-9_223_372_036_854_775_80n))).toBe(9);
-        expect(p.getTotalBytes(p.packageNumber(-2_147_483_648))).toBe(5);
-        expect(p.getTotalBytes(p.packageNumber(-32_768))).toBe(3);
-        expect(p.getTotalBytes(p.packageNumber(-128))).toBe(2);
-      });
-    })
+	describe('getTotalBytes', () => {
+		describe('Numbers', () => {
+			it('gets the correct amount of bytes for positive numbers', () => {
+				expect(p.getTotalBytes(p.packageNumber(15))).toBe(1);
+				expect(p.getTotalBytes(p.packageNumber(200))).toBe(2);
+				expect(p.getTotalBytes(p.packageNumber(32_767))).toBe(3);
+				expect(p.getTotalBytes(p.packageNumber(32_768))).toBe(5);
+				expect(p.getTotalBytes(p.packageNumber(2_147_483_648))).toBe(9);
+			});
+			it('gets the correct amount of bytes for negative numbers', () => {
+				expect(p.getTotalBytes(p.packageNumber(-16))).toBe(1);
+				expect(
+					p.getTotalBytes(p.packageNumber(-9_223_372_036_854_775_80n)),
+				).toBe(9);
+				expect(p.getTotalBytes(p.packageNumber(-2_147_483_648))).toBe(5);
+				expect(p.getTotalBytes(p.packageNumber(-32_768))).toBe(3);
+				expect(p.getTotalBytes(p.packageNumber(-128))).toBe(2);
+			});
+		});
 
-    describe('Strings', () => {
-      it('Works for tiny strings', () => {
-        const strings = Array.from({ length: 16 }, (_, i) => 'a'.repeat(i))
-        for(let i = 0, s = strings[i]; strings[i]; s = strings[++i]) {
-          expect(p.getTotalBytes(p.packageString(s))).toBe(i);
-        }
-      });
+		describe('Strings', () => {
+			it('Works for tiny strings', () => {
+				const strings = Array.from({ length: 16 }, (_, i) => 'a'.repeat(i));
+				for (let i = 0, s = strings[i]; strings[i]; s = strings[++i]) {
+					expect(p.getTotalBytes(p.packageString(s))).toBe(i);
+				}
+			});
 
-      it('Works with 8 bit strings', () => {
-        expect(p.getTotalBytes(p.packageString('a'.repeat(26)))).toBe(28);
-        expect(p.getTotalBytes(p.packageString('a'.repeat(255)))).toBe(257);
-      });
+			it('Works with 8 bit strings', () => {
+				expect(p.getTotalBytes(p.packageString('a'.repeat(26)))).toBe(28);
+				expect(p.getTotalBytes(p.packageString('a'.repeat(255)))).toBe(257);
+			});
 
-      it('Works with 16 bit strings', () => {
-        expect(p.getTotalBytes(p.packageString('a'.repeat(256)))).toBe(259);
-        expect(p.getTotalBytes(p.packageString('a'.repeat(65_535)))).toBe(65_538);
-      });
+			it('Works with 16 bit strings', () => {
+				expect(p.getTotalBytes(p.packageString('a'.repeat(256)))).toBe(259);
+				expect(p.getTotalBytes(p.packageString('a'.repeat(65_535)))).toBe(
+					65_538,
+				);
+			});
 
-      it('Works with 32 bit strings', () => {
-        expect(p.getTotalBytes(p.packageString('a'.repeat(65_536)))).toBe(65_541);
-      });
+			it('Works with 32 bit strings', () => {
+				expect(p.getTotalBytes(p.packageString('a'.repeat(65_536)))).toBe(
+					65_541,
+				);
+			});
+		});
 
-    });
+		describe('Floats', () => {
+			it('Works for floats', () => {
+				expect(p.getTotalBytes(p.packageFloat(2.1))).toBe(9);
+			});
+		});
 
-    describe('Floats', () => {
-      it('Works for floats', () => {
-        expect(p.getTotalBytes(p.packageFloat(2.1))).toBe(9);
-      });
-    });
+		describe('Bytes', () => {
+			it('Works for empty byte arrays', () => {
+				expect(p.getTotalBytes(p.packageBytes(Uint8Array.from([])))).toBe(2);
+			});
 
-    describe('Bytes', () => {
-      it('Works for empty byte arrays', () => {
-        expect(p.getTotalBytes(p.packageBytes(Uint8Array.from([])))).toBe(2);
-      });
+			it('Works for 8-bit byte arrays', () => {
+				expect(
+					p.getTotalBytes(
+						p.packageBytes(Uint8Array.from(Array.from({ length: 1 }, () => 0))),
+					),
+				).toBe(3);
+				expect(
+					p.getTotalBytes(
+						p.packageBytes(
+							Uint8Array.from(Array.from({ length: 255 }, () => 0)),
+						),
+					),
+				).toBe(257);
+			});
 
-      it('Works for 8-bit byte arrays', () => {
-        expect(p.getTotalBytes(p.packageBytes(Uint8Array.from(Array.from({ length: 1 }, () => 0))))).toBe(3);
-        expect(p.getTotalBytes(p.packageBytes(Uint8Array.from(Array.from({ length: 255}, () => 0))))).toBe(257);
-      });
+			it('Works for 16-bit byte arrays', () => {
+				expect(
+					p.getTotalBytes(
+						p.packageBytes(
+							Uint8Array.from(Array.from({ length: 256 }, () => 0)),
+						),
+					),
+				).toBe(259);
+				expect(
+					p.getTotalBytes(
+						p.packageBytes(
+							Uint8Array.from(Array.from({ length: 65535 }, () => 0)),
+						),
+					),
+				).toBe(65538);
+			});
 
-      it('Works for 16-bit byte arrays', () => {
-        expect(p.getTotalBytes(p.packageBytes(Uint8Array.from(Array.from({ length: 256 }, () => 0))))).toBe(259);
-        expect(p.getTotalBytes(p.packageBytes(Uint8Array.from(Array.from({ length: 65535 }, () => 0))))).toBe(65538);
-      });
+			it('Works for 32-bit byte arrays', () => {
+				expect(
+					p.getTotalBytes(
+						p.packageBytes(
+							Uint8Array.from(Array.from({ length: 65536 }, () => 0)),
+						),
+					),
+				).toBe(65541);
+			});
+		});
 
-      it('Works for 32-bit byte arrays', () => {
-        expect(p.getTotalBytes(p.packageBytes(Uint8Array.from(Array.from({ length: 65536 }, () => 0))))).toBe(65541);
-      });
-    });
+		describe('Booleans', () => {
+			it('Works for booleans', () => {
+				expect(p.getTotalBytes(p.packageBoolean(true))).toBe(1);
+				expect(p.getTotalBytes(p.packageBoolean(false))).toBe(1);
+			});
+		});
 
-    describe('Booleans', () => {
-      it('Works for booleans', () => {
-        expect(p.getTotalBytes(p.packageBoolean(true))).toBe(1);
-        expect(p.getTotalBytes(p.packageBoolean(false))).toBe(1);
-      });
-    });
+		it('Works for null', () => {
+			expect(p.getTotalBytes(p.packageNull())).toBe(1);
+		});
 
-    it('Works for null', () => {
-      expect(p.getTotalBytes(p.packageNull())).toBe(1);
-    });
-
-    describe('Works for lists', () => {
-      it('Works for small lists', () => {
-        expect(p.getTotalBytes(p.packageList([1]))).toBe(2);
-        expect(p.getTotalBytes(p.packageList([1, 2, 3]))).toBe(4);
-        expect(p.getTotalBytes(p.packageList(['a', 'b', 'c']))).toBe(7);
-        expect(p.getTotalBytes(p.packageList(['one', 'two', 'three']))).toBe(15);
-      });
-    });
-  });
+		describe('Works for lists', () => {
+			it('Works for small lists', () => {
+				expect(p.getTotalBytes(p.packageList([1]))).toBe(2);
+				expect(p.getTotalBytes(p.packageList([1, 2, 3]))).toBe(4);
+				expect(p.getTotalBytes(p.packageList(['a', 'b', 'c']))).toBe(7);
+				expect(p.getTotalBytes(p.packageList(['one', 'two', 'three']))).toBe(
+					15,
+				);
+			});
+		});
+	});
 });
