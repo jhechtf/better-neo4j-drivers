@@ -317,14 +317,18 @@ export class Packstream {
 
 		if (values.length <= 15) byteMarker = byteMarker + values.length;
 		else if (between(values.length, 16, 256)) {
+			byteMarker = LIST_TYPES.LIST_8;
 			sizeMarker = new Uint8Array(1);
 			const dv = new DataView(sizeMarker.buffer);
 			dv.setUint8(0, values.length);
-		} else if (between(values.length, 256, 65_546)) {
+		} else if (between(values.length, 256, 65_536)) {
+			console.info(values.length);
+			byteMarker = LIST_TYPES.LIST_16;
 			sizeMarker = new Uint8Array(2);
 			const dv = new DataView(sizeMarker.buffer);
 			dv.setUint16(0, values.length);
 		} else if (between(values.length, 65_536, 2_147_483_648)) {
+			byteMarker = LIST_TYPES.LIST_32;
 			sizeMarker = new Uint8Array(4);
 			const dv = new DataView(sizeMarker.buffer);
 			dv.setUint32(0, values.length);
@@ -626,19 +630,21 @@ export class Packstream {
 		const leadBytes = this.getLeadByteLength(value);
 		const regularBytes = this.getByteLength(value);
 
-		if (![DICT_TYPES.TINY_DICT, LIST_TYPES.LIST_BASE].includes(marker & 0xf0))
+		const leadByte = marker & 0xf0;
+
+		// if we do not have a list or dict type, which have weirder rules about
+		// sizes, we can just put out the leadBytes + the regular bytes and be done
+		if (
+			!(
+				leadByte in LIST_TYPES ||
+				leadByte in DICT_TYPES ||
+				marker in LIST_TYPES ||
+				marker in DICT_TYPES
+			)
+		)
 			return leadBytes + regularBytes;
 
-		// Ok so how do we do lists and dictionaries...
-		/**
-		 * Since lists and dictionaries are dynamic in length, the total bytes is going to be
-		 * more complicated to determine because the length given in the byte is simply the number
-		 * of items in the list, or key/value pairs in the dict.
-		 *
-		 * This means that the length of the items in those things is unknown based
-		 * solely on the marker bytes.
-		 */
-
+		// Otherwise, we needt to deal with lists / dicts requiring stupid shit
 		let totalBytes = leadBytes;
 		let arr = value.slice(leadBytes);
 		while (arr.length > 0) {
@@ -648,8 +654,6 @@ export class Packstream {
 			arr = arr.slice(tmpBytes);
 			if (arr.length === 0) break;
 		}
-
-		console.info(totalBytes);
 
 		return totalBytes;
 	}
