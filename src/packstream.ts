@@ -66,6 +66,9 @@ export class Packstream {
 			return arr[0];
 		}
 
+		if (byteHigh in LIST_TYPES || marker in LIST_TYPES)
+			return this.unpackageList(arr);
+
 		if (byteHigh === STRING_TYPES.TINY_STRING) return this.unpackageString(arr);
 
 		switch (marker) {
@@ -565,7 +568,7 @@ export class Packstream {
 		return Uint8Array.from([byteMaker, ...sizeBytes, ...baseThingies]);
 	}
 
-	unpackageDict(value: Uint8Array): Record<string, unknown> {
+	unpackageDict<T extends Record<string, unknown>>(value: Uint8Array): T {
 		const [marker] = value;
 		const markerHigh = marker & 0xf0;
 		const markerLow = marker & 0xf;
@@ -601,23 +604,19 @@ export class Packstream {
 
 		const entries: [string, unknown][] = [];
 
-		console.info('Entries count', entriesCount);
-
 		while (entries.length < entriesCount && sub.length > 0) {
-			let markerMeta = this.getLeadByteLength(sub);
-			let byteLength = this.getByteLength(sub);
+			let totalByteLength = this.getTotalBytes(sub);
 			const key = this.unpackage(sub);
 			if (typeof key !== 'string')
 				throw new Error(`Key is not the correct type: ${key}`);
-			sub = sub.slice(byteLength + markerMeta + 1);
-			markerMeta = this.getLeadByteLength(sub);
-			byteLength = this.getByteLength(sub);
+			sub = sub.slice(totalByteLength + 1);
 			const value = this.unpackage(sub);
+			totalByteLength = this.getTotalBytes(sub);
 			entries.push([key, value]);
-			sub = sub.slice(markerMeta + byteLength);
+			sub = sub.slice(totalByteLength);
 		}
 
-		return Object.fromEntries(entries);
+		return Object.fromEntries(entries) as T;
 	}
 
 	/**
