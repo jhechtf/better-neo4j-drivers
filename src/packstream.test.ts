@@ -256,6 +256,28 @@ describe('Packstream class', () => {
 			expect(p.unpackageDict(p.packageDict(nestedObj))).toStrictEqual(
 				nestedObj,
 			);
+
+			const dictsWithDict = {
+				a: 'a',
+				b: 'hello',
+				c: {
+					d: 'music',
+					e: 'era',
+				},
+			};
+
+			expect(p.unpackageDict(p.packageDict(dictsWithDict))).toStrictEqual(
+				dictsWithDict,
+			);
+		});
+
+		it('Works with large dictionaries', () => {
+			const largeDictEntries = Array.from({ length: 256 }, (_, i) => [
+				i.toString(),
+				i,
+			]);
+			const obj = Object.fromEntries(largeDictEntries);
+			expect(p.unpackageDict(p.packageDict(obj))).toStrictEqual(obj);
 		});
 	});
 
@@ -282,13 +304,19 @@ describe('Packstream class', () => {
 		describe('Strings', () => {
 			it('Works for tiny strings', () => {
 				const strings = Array.from({ length: 16 }, (_, i) => 'a'.repeat(i));
-				for (let i = 0, s = strings[i]; strings[i]; s = strings[++i]) {
-					expect(p.getTotalBytes(p.packageString(s))).toBe(i);
+
+				for (
+					let i = 0, s = strings[i];
+					strings[i] !== undefined;
+					s = strings[++i]
+				) {
+					expect(p.getTotalBytes(p.packageString(s))).toBe(i + 1);
 				}
 			});
 
 			it('Works with 8 bit strings', () => {
-				expect(p.getTotalBytes(p.packageString('a'.repeat(26)))).toBe(28);
+				const a26 = p.packageString('a'.repeat(26));
+				expect(p.getTotalBytes(a26)).toBe(a26.byteLength);
 				expect(p.getTotalBytes(p.packageString('a'.repeat(255)))).toBe(257);
 			});
 
@@ -405,7 +433,6 @@ describe('Packstream class', () => {
 			});
 
 			it('Works for 32-bit sized lists', () => {
-				console.info('break');
 				expect(
 					p.getTotalBytes(
 						p.packageList(Array.from({ length: 65_536 }, () => 0)),

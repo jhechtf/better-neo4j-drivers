@@ -48,6 +48,10 @@ export class Packstream {
 			return this.packageList(message);
 		}
 
+		if (typeof message === 'object') {
+			return this.packageDict(message as Record<string, unknown>);
+		}
+
 		return encodedMessage;
 	}
 
@@ -68,6 +72,12 @@ export class Packstream {
 
 		if (byteHigh in LIST_TYPES || marker in LIST_TYPES)
 			return this.unpackageList(arr);
+
+		console.info('unpackage break');
+		if (byteHigh === DICT_TYPES.TINY_DICT || marker in DICT_TYPES) {
+			console.info('tony danza');
+			return this.unpackageDict(arr);
+		}
 
 		if (byteHigh === STRING_TYPES.TINY_STRING) return this.unpackageString(arr);
 
@@ -446,8 +456,13 @@ export class Packstream {
 		const [marker] = value;
 		const markerHigh = marker & 0xf0;
 		let totalExtra = 0;
-
-		if ([DICT_TYPES.TINY_DICT, LIST_TYPES.LIST_BASE].includes(markerHigh))
+		if (
+			[
+				DICT_TYPES.TINY_DICT,
+				LIST_TYPES.LIST_BASE,
+				STRING_TYPES.TINY_STRING,
+			].includes(markerHigh)
+		)
 			return 1;
 
 		switch (marker) {
@@ -609,11 +624,12 @@ export class Packstream {
 			const key = this.unpackage(sub);
 			if (typeof key !== 'string')
 				throw new Error(`Key is not the correct type: ${key}`);
-			sub = sub.slice(totalByteLength + 1);
+			sub = sub.slice(totalByteLength);
 			const value = this.unpackage(sub);
 			totalByteLength = this.getTotalBytes(sub);
 			entries.push([key, value]);
 			sub = sub.slice(totalByteLength);
+			console.info('testing');
 		}
 
 		return Object.fromEntries(entries) as T;
