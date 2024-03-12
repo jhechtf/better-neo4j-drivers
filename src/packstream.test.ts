@@ -282,7 +282,7 @@ describe('Packstream class', () => {
 			const obj = Object.fromEntries(largeDictEntries);
 			expect(p.unpackageDict(p.packageDict(obj))).toStrictEqual(obj);
 
-			const veryLargeDicts = Array.from({ length: 100 }, (_, i) => [
+			const veryLargeDicts = Array.from({ length: 65_536 }, (_, i) => [
 				`${i + 9000}`,
 				i + 9000,
 			]);
