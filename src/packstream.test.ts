@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Packstream } from './packstream';
+import { writeFileSync } from 'node:fs';
 import {
 	BYTE_TYPES,
 	INT_TYPES,
@@ -55,6 +56,8 @@ describe('Packstream class', () => {
 		expect(p.packageNumber(42, INT_TYPES.INT_32)).toStrictEqual(
 			Uint8Array.from([INT_TYPES.INT_32, 0, 0, 0, 42]),
 		);
+
+		expect(p.unpackageNumber(p.packageNumber(9000))).toBe(9000);
 
 		expect(p.packageNumber(42, INT_TYPES.INT_64)).toStrictEqual(
 			Uint8Array.from([
@@ -278,6 +281,13 @@ describe('Packstream class', () => {
 			]);
 			const obj = Object.fromEntries(largeDictEntries);
 			expect(p.unpackageDict(p.packageDict(obj))).toStrictEqual(obj);
+
+			const veryLargeDicts = Array.from({ length: 100 }, (_, i) => [
+				`${i + 9000}`,
+				i + 9000,
+			]);
+			const obj2 = Object.fromEntries(veryLargeDicts);
+			expect(p.unpackageDict(p.packageDict(obj2))).toStrictEqual(obj2);
 		});
 	});
 
@@ -285,7 +295,7 @@ describe('Packstream class', () => {
 		describe('Numbers', () => {
 			it('gets the correct amount of bytes for positive numbers', () => {
 				expect(p.getTotalBytes(p.packageNumber(15))).toBe(1);
-				expect(p.getTotalBytes(p.packageNumber(200))).toBe(2);
+				expect(p.getTotalBytes(p.packageNumber(200))).toBe(3);
 				expect(p.getTotalBytes(p.packageNumber(32_767))).toBe(3);
 				expect(p.getTotalBytes(p.packageNumber(32_768))).toBe(5);
 				expect(p.getTotalBytes(p.packageNumber(2_147_483_648))).toBe(9);

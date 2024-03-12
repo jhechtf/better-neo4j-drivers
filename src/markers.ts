@@ -17,7 +17,7 @@ export enum DICT_TYPES {
 	TINY_DICT = 0xa0,
 	DICT_8 = 0xd8,
 	DICT_16 = 0xd9,
-	DICT_32 = 0xd32,
+	DICT_32 = 0xda,
 }
 
 export const FLOAT_MARKER = 0xc1;

@@ -73,9 +73,7 @@ export class Packstream {
 		if (byteHigh in LIST_TYPES || marker in LIST_TYPES)
 			return this.unpackageList(arr);
 
-		console.info('unpackage break');
 		if (byteHigh === DICT_TYPES.TINY_DICT || marker in DICT_TYPES) {
-			console.info('tony danza');
 			return this.unpackageDict(arr);
 		}
 
@@ -174,7 +172,7 @@ export class Packstream {
 			if (typeof value === 'number' && between(value, -16, 128))
 				return Uint8Array.from([value < 0 ? 0xf0 + value + 16 : value]);
 
-			if (between(value, 128, 32_767) || between(value, -128, -16)) {
+			if (between(value, -128, -16)) {
 				byteMarker = INT_TYPES.INT_8;
 				method = 'setUint8';
 				arrayBufferSize = 1;
@@ -629,7 +627,6 @@ export class Packstream {
 			totalByteLength = this.getTotalBytes(sub);
 			entries.push([key, value]);
 			sub = sub.slice(totalByteLength);
-			console.info('testing');
 		}
 
 		return Object.fromEntries(entries) as T;
