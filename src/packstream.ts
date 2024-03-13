@@ -1,4 +1,5 @@
 import {
+	BOOLEAN_TYPES,
 	BYTE_TYPES,
 	DICT_TYPES,
 	FLOAT_MARKER,
@@ -61,6 +62,8 @@ export class Packstream {
 		const byteLow = arr[0] & 0xf;
 
 		if (marker === NULL_MARKER) return null;
+
+		if (marker in BOOLEAN_TYPES) return marker === BOOLEAN_TYPES.TRUE;
 
 		if (between(arr[0], 0xf0, 0xff)) {
 			return -16 + byteLow;

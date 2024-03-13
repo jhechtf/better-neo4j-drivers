@@ -20,6 +20,11 @@ export enum DICT_TYPES {
 	DICT_32 = 0xda,
 }
 
+export enum BOOLEAN_TYPES {
+	FALSE = 0xc2,
+	TRUE = 0xc3,
+}
+
 export const FLOAT_MARKER = 0xc1;
 
 export enum STRING_TYPES {

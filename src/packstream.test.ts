@@ -280,14 +280,14 @@ describe('Packstream class', () => {
 				i,
 			]);
 			const obj = Object.fromEntries(largeDictEntries);
-			// expect(p.unpackageDict(p.packageDict(obj))).toStrictEqual(obj);
+			expect(p.unpackageDict(p.packageDict(obj))).toStrictEqual(obj);
+		});
 
-			// const veryLargeDicts = Array.from({ length: 65_536 }, (_, i) => [
-			// 	`${i + 9000}`,
-			// 	i + 9000,
-			// ]);
-			// const obj2 = Object.fromEntries(veryLargeDicts);
-			// expect(p.unpackageDict(p.packageDict(obj2))).toStrictEqual(obj2);
+		it('Works with dictionaries that have booleans', () => {
+			const obj = {
+				a: true,
+			};
+			expect(p.unpackageDict(p.packageDict(obj))).toStrictEqual(obj);
 		});
 	});
 
