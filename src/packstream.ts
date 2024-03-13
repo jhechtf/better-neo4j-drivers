@@ -333,7 +333,6 @@ export class Packstream {
 			const dv = new DataView(sizeMarker.buffer);
 			dv.setUint8(0, values.length);
 		} else if (between(values.length, 256, 65_536)) {
-			console.info(values.length);
 			byteMarker = LIST_TYPES.LIST_16;
 			sizeMarker = new Uint8Array(2);
 			const dv = new DataView(sizeMarker.buffer);
@@ -473,16 +472,19 @@ export class Packstream {
 			case STRING_TYPES.STRING_8:
 			case LIST_TYPES.LIST_8:
 			case BYTE_TYPES.BYTE_8:
+			case DICT_TYPES.DICT_8:
 				totalExtra = 2;
 				break;
 			case STRING_TYPES.STRING_16:
 			case LIST_TYPES.LIST_16:
 			case BYTE_TYPES.BYTE_16:
+			case DICT_TYPES.DICT_16:
 				totalExtra = 3;
 				break;
 			case STRING_TYPES.STRING_32:
 			case LIST_TYPES.LIST_32:
 			case BYTE_TYPES.BYTE_32:
+			case DICT_TYPES.DICT_32:
 				totalExtra = 5;
 				break;
 			case FLOAT_MARKER:
