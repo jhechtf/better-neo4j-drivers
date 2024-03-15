@@ -449,6 +449,16 @@ describe('Packstream class', () => {
 					),
 				).toBe(65_541);
 			});
+
+			it('Works for lists of varying types', () => {
+				const list = ['hello', { a: 1 }, null];
+				expect(p.unpackageList(p.packageList(list))).toStrictEqual(list);
+			});
+
+			it('Works on dumbass lists', () => {
+				const list = p.packageList([1, { a: 2 }, null]);
+				expect(p.getTotalBytes(list)).toBe(list.byteLength);
+			});
 		});
 
 		describe('Works for dicts', () => {

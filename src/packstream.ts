@@ -1,3 +1,4 @@
+import { expect } from 'vitest';
 import {
 	BOOLEAN_TYPES,
 	BYTE_TYPES,
@@ -311,10 +312,9 @@ export class Packstream {
 
 			returned.push(b);
 
-			const bLength = this.getByteLength(sub);
-			const metadataLength = this.getLeadByteLength(sub);
+			const totalBytes = this.getTotalBytes(sub);
 
-			sub = sub.slice(metadataLength + bLength);
+			sub = sub.slice(totalBytes);
 
 			if (returned.length === count) break;
 
@@ -349,6 +349,8 @@ export class Packstream {
 
 		const packagedValues = values.map((v) => {
 			if (v instanceof Uint8Array) return this.packageBytes(v);
+			if (Array.isArray(v)) return this.packageList(v);
+			if (v === null) return Uint8Array.from([NULL_MARKER]);
 			switch (typeof v) {
 				case 'number':
 					if (v % 1 !== 0) return this.packageFloat(v);
@@ -359,6 +361,8 @@ export class Packstream {
 					return this.packageString(v);
 				case 'boolean':
 					return this.packageBoolean(v);
+				case 'object':
+					return this.packageDict(v as Record<string, unknown>);
 				default:
 					return Uint8Array.from([NULL_MARKER]);
 			}
@@ -647,14 +651,15 @@ export class Packstream {
 		const leadBytes = this.getLeadByteLength(value);
 		const regularBytes = this.getByteLength(value);
 
-		const leadByte = marker & 0xf0;
+		const markerHigh = marker & 0xf0;
+		const markerLow = marker & 0xf;
 
 		// if we do not have a list or dict type, which have weirder rules about
 		// sizes, we can just put out the leadBytes + the regular bytes and be done
 		if (
 			!(
-				leadByte in LIST_TYPES ||
-				leadByte in DICT_TYPES ||
+				markerHigh in LIST_TYPES ||
+				markerHigh in DICT_TYPES ||
 				marker in LIST_TYPES ||
 				marker in DICT_TYPES
 			)
@@ -663,13 +668,35 @@ export class Packstream {
 
 		// Otherwise, we needt to deal with lists / dicts requiring stupid shit
 		let totalBytes = leadBytes;
+		let expectedCount = markerLow;
+		const dv = new DataView(value.buffer);
+
+		switch (marker) {
+			case LIST_TYPES.LIST_8:
+			case DICT_TYPES.DICT_8:
+				expectedCount = dv.getUint8(1);
+				break;
+			case LIST_TYPES.LIST_16:
+			case DICT_TYPES.DICT_16:
+				expectedCount = dv.getUint16(1);
+				break;
+			case LIST_TYPES.LIST_32:
+			case DICT_TYPES.DICT_32:
+				expectedCount = dv.getUint32(1);
+				break;
+		}
+
+		if (marker in DICT_TYPES || markerHigh in DICT_TYPES) expectedCount *= 2;
+
+		let count = 0;
 		let arr = value.slice(leadBytes);
-		while (arr.length > 0) {
+		// Todo: Fix this in cases where the array isn't necessary all belonging to one item
+		while (count < expectedCount && arr.length > 0) {
 			const tmpBytes = this.getTotalBytes(arr);
 			totalBytes += tmpBytes;
 
 			arr = arr.slice(tmpBytes);
-			if (arr.length === 0) break;
+			count++;
 		}
 
 		return totalBytes;
