@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { Packstream } from './packstream';
-import { writeFileSync } from 'node:fs';
 import {
 	BYTE_TYPES,
 	INT_TYPES,
 	LIST_TYPES,
 	STRING_TYPES,
 	NULL_MARKER,
-	DICT_BASE,
 	FLOAT_MARKER,
 	DICT_TYPES,
 } from './markers';
@@ -205,6 +203,15 @@ describe('Packstream class', () => {
 		expect(p.unpackageList(p.packageList([null, 1]))).toStrictEqual([null, 1]);
 
 		// TODO: Add tests for dicts / structures
+		const mixedLists = [1, 2.1, ['three']];
+		expect(p.unpackageList(p.packageList(mixedLists))).toStrictEqual(
+			mixedLists,
+		);
+
+		const listsWithDicts = [{ a: 1, b: 'three' }, 2.1, null];
+		expect(p.unpackageList(p.packageList(listsWithDicts))).toStrictEqual(
+			listsWithDicts,
+		);
 	});
 
 	describe('Dictionaries', () => {
@@ -286,6 +293,32 @@ describe('Packstream class', () => {
 		it('Works with dictionaries that have booleans', () => {
 			const obj = {
 				a: true,
+			};
+			expect(p.unpackageDict(p.packageDict(obj))).toStrictEqual(obj);
+		});
+
+		it('Works with dictionaries that have mixed types', () => {
+			const obj = {
+				list: [1, 2, 3.4],
+				name: 'string',
+				age: 24,
+				what: null,
+				dead: false,
+				date: '2020-04-50T00:00:01',
+			};
+
+			expect(p.unpackageDict(p.packageDict(obj))).toStrictEqual(obj);
+		});
+
+		it('Works with nested dictionaries', () => {
+			const obj = {
+				a: {
+					b: 1,
+				},
+				c: '2',
+				d: {
+					e: ['f'],
+				},
 			};
 			expect(p.unpackageDict(p.packageDict(obj))).toStrictEqual(obj);
 		});
