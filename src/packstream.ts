@@ -107,6 +107,16 @@ export class Packstream {
 		return {};
 	}
 
+	packageStruct(): Uint8Array {
+		// Stub for now
+		return Uint8Array.from([]);
+	}
+
+	unpackageStruct(): Record<string, unknown> {
+		// Stub for now
+		return {};
+	}
+
 	unpackageNumber(
 		value: Uint8Array,
 		bigIntMode: 'string' | 'bigint' = 'bigint',

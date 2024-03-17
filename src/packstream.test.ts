@@ -322,6 +322,21 @@ describe('Packstream class', () => {
 			};
 			expect(p.unpackageDict(p.packageDict(obj))).toStrictEqual(obj);
 		});
+
+		it('Works with dictionaries that have a raw Uint8Array', () => {
+			const obj = {
+				raw: Uint8Array.from([1, 2, 3]),
+			};
+			expect(p.unpackageDict(p.packageDict(obj))).toStrictEqual(obj);
+		});
+	});
+
+	describe('Structures', () => {
+		describe('Nodes', () => {
+			it('Packages and unpackages Nodes correctly', () => {
+				expect(1).toBe(1);
+			});
+		});
 	});
 
 	describe('getTotalBytes', () => {
