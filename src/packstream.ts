@@ -10,6 +10,7 @@ import {
 	STRING_TYPES,
 } from './markers';
 import { between, mergeUint8Arrays } from './util/helpers';
+import { StructureType } from './structures';
 
 export const SHARED_HEADERS = {
 	user_agent: 'BetterDrivers/1.0.0',
@@ -107,14 +108,14 @@ export class Packstream {
 		return {};
 	}
 
-	packageStruct(): Uint8Array {
+	packageStructure(): Uint8Array {
 		// Stub for now
 		return Uint8Array.from([]);
 	}
 
-	unpackageStruct(): Record<string, unknown> {
+	unpackageStructure(value: Uint8Array): StructureType {
 		// Stub for now
-		return {};
+		return {} as StructureType;
 	}
 
 	unpackageNumber(

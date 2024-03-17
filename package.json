@@ -14,7 +14,7 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "keywords": [],
+  "keywords": ["neo4j", "drivers"],
   "author": "",
   "license": "ISC",
   "devDependencies": {
