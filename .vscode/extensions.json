@@ -1,0 +1,6 @@
+{
+  "recommendations": [
+    "biomejs.biome",
+    "better-ts-errors.better-ts-errors"
+  ]
+}

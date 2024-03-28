@@ -8,7 +8,6 @@ import { HANDSHAKE, VERSIONS } from './handshake';
 // bob.addEventListener('open', () => {
 //   const b = new Blob()
 //   const initialListener: (e: MessageEvent) => void = async (e) => {
-    
 
 //     console.info('S:', e.data);
 //     if(e.data instanceof Blob) {
@@ -31,4 +30,4 @@ import { HANDSHAKE, VERSIONS } from './handshake';
 //   console.info('closing connection', e);
 // })
 
-export default {}
+export default {};
