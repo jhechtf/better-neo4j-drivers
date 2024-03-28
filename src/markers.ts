@@ -59,6 +59,8 @@ export enum MESSAGES {
 	FAILURE = 0x7f,
 }
 
+export const STRUCTURE_MARKER = 0xb0;
+
 export enum STRUCTURES {
 	TINY_STRUCT = 0xb0,
 	NODE = 0x4e,

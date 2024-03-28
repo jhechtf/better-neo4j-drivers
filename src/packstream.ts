@@ -8,6 +8,8 @@ import {
 	LIST_TYPES,
 	NULL_MARKER,
 	STRING_TYPES,
+	STRUCTURES,
+	STRUCTURE_MARKER,
 } from './markers';
 import { between, mergeUint8Arrays } from './util/helpers';
 import { StructureType } from './structures';
@@ -84,6 +86,8 @@ export class Packstream {
 
 		if (byteHigh === STRING_TYPES.TINY_STRING) return this.unpackageString(arr);
 
+		if (byteHigh === STRUCTURE_MARKER) return this.unpackageStructure(arr);
+
 		switch (marker) {
 			case INT_TYPES.INT_8:
 			case INT_TYPES.INT_16:
@@ -108,14 +112,57 @@ export class Packstream {
 		return {};
 	}
 
-	packageStructure(): Uint8Array {
+	packageStructure<T extends StructureType = StructureType>(
+		value: T,
+	): Uint8Array {
 		// Stub for now
-		return Uint8Array.from([]);
+		const marker = STRUCTURES.TINY_STRUCT;
+		const tagByte = this.getStructureMarker(value);
+
+		return Uint8Array.from([marker, tagByte]);
 	}
 
-	unpackageStructure(value: Uint8Array): StructureType {
+	getStructureMarker<T extends Record<string, unknown>>(value: T) {
+		if (
+			typeof value.id === 'number' &&
+			Array.isArray(value.labels) &&
+			typeof value.properties === 'object' &&
+			typeof value.element_id === 'string'
+		)
+			return STRUCTURES.NODE;
+
+		if (
+			typeof value.id === 'number' &&
+			typeof value.type === 'string' &&
+			typeof value.properties === 'object' &&
+			typeof value.element_id === 'string'
+		)
+			return STRUCTURES.UNBOUND_RELATIONSHIP;
+
+		if (
+			typeof value.id === 'number' &&
+			typeof value.startNodeId === 'number' &&
+			typeof value.endNodeId === 'number' &&
+			typeof value.type === 'string'
+		)
+			return STRUCTURES.RELATIONSHIP;
+
+		if (
+			Array.isArray(value.nodes) &&
+			Array.isArray(value.rels) &&
+			Array.isArray(value.indices)
+		)
+			return STRUCTURES.PATH;
+
+		return 0;
+	}
+
+	unpackageStructure<T extends StructureType = StructureType>(
+		value: Uint8Array,
+	): T {
+		const b = this.unpackageDict(value.slice(2));
 		// Stub for now
-		return {} as StructureType;
+		return b as T;
 	}
 
 	unpackageNumber(
