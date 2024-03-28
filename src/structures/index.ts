@@ -1,5 +1,10 @@
 // Placeholder
 export * from './node';
+export * from './date';
+export * from './path';
+export * from './point';
+export * from './relationship';
+export * from './time';
 
 import {
 	DateTime,

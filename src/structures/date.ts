@@ -1,22 +1,47 @@
-export interface PackstreamDate {
-	days: number;
+import { BaseStructure } from './base';
+
+export class PackstreamDate extends BaseStructure {
+	constructor(public days: number) {
+		super();
+	}
 }
 
-export interface DateTime {
-	seconds: number;
-	nanoseconds: number;
-	tz_offset_seconds: number;
+export class Duration extends BaseStructure {
+	constructor(
+		public months: number,
+		public days: number,
+		public seconds: number,
+		public nanoseconds: number,
+	) {
+		super();
+	}
 }
 
-export type DateTimeZoneId = Omit<DateTime, 'tz_offset_seconds'> & {
-	tz_id: string;
-};
+export class LocalDateTime extends BaseStructure {
+	constructor(
+		public seconds: number,
+		public nanoseconds: number,
+	) {
+		super();
+	}
+}
 
-export type LocalDateTime = Omit<DateTime, 'tz_offset_seconds'>;
+export class DateTimeZoneId extends LocalDateTime {
+	constructor(
+		public seconds: number,
+		public nanoseconds: number,
+		public tz_id: string,
+	) {
+		super(seconds, nanoseconds);
+	}
+}
 
-export interface Duration {
-	months: number;
-	days: number;
-	seconds: number;
-	nanoseconds: number;
+export class DateTime extends LocalDateTime {
+	constructor(
+		public seconds: number,
+		public nanoseconds: number,
+		public tz_offset_seconds: number,
+	) {
+		super(seconds, nanoseconds);
+	}
 }
