@@ -9,6 +9,7 @@ import {
 	FLOAT_MARKER,
 	DICT_TYPES,
 } from './markers';
+import { PackstreamNode } from './structures';
 
 describe('Packstream class', () => {
 	const p = new Packstream();
@@ -334,6 +335,16 @@ describe('Packstream class', () => {
 	describe('Structures', () => {
 		describe('Nodes', () => {
 			it('Packages and unpackages Nodes correctly', () => {
+				const b = new PackstreamNode(1, {}, ['User'], '1');
+				const node = p.packageStructure(b);
+				const dict = p.packageDict(b as unknown as Record<string, unknown>);
+				const raw = [0xb4, 0x4e, ...dict];
+
+				for (let i = 0; i < node.length; i++) {
+					console.info(i, node[i], raw[i]);
+					expect(node[i]).toBe(raw[i]);
+				}
+
 				expect(1).toBe(1);
 			});
 		});

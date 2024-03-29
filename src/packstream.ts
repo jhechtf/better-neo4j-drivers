@@ -1,4 +1,3 @@
-import { expect } from 'vitest';
 import {
 	BOOLEAN_TYPES,
 	BYTE_TYPES,
@@ -12,7 +11,23 @@ import {
 	STRUCTURE_MARKER,
 } from './markers';
 import { between, mergeUint8Arrays } from './util/helpers';
-import { StructureType } from './structures';
+import {
+	PackstreamDate,
+	PackstreamNode,
+	Time,
+	LocalTime,
+	Path,
+	Relationship,
+	StructureType,
+	UnboundRelationship,
+	DateTime,
+	DateTimeZoneId,
+	LocalDateTime,
+	Duration,
+	Point2D,
+	Point3D,
+} from './structures';
+import { BaseStructure } from './structures/base';
 
 export const SHARED_HEADERS = {
 	user_agent: 'BetterDrivers/1.0.0',
@@ -43,6 +58,10 @@ export class Packstream {
 
 		if (message instanceof Uint8Array) {
 			return this.packageBytes(message);
+		}
+
+		if (message instanceof BaseStructure) {
+			return this.packageStructure(message);
 		}
 
 		if (typeof message === 'number') {
@@ -112,47 +131,47 @@ export class Packstream {
 		return {};
 	}
 
-	packageStructure<T extends StructureType = StructureType>(
+	packageStructure<T extends BaseStructure = BaseStructure>(
 		value: T,
 	): Uint8Array {
 		// Stub for now
 		const marker = STRUCTURES.TINY_STRUCT;
 		const tagByte = this.getStructureMarker(value);
 
-		return Uint8Array.from([marker, tagByte]);
+		return Uint8Array.from([
+			marker + Object.keys(value).length,
+			tagByte,
+			...this.packageDict(value as Record<string, unknown>),
+		]);
 	}
 
-	getStructureMarker<T extends Record<string, unknown>>(value: T) {
-		if (
-			typeof value.id === 'number' &&
-			Array.isArray(value.labels) &&
-			typeof value.properties === 'object' &&
-			typeof value.element_id === 'string'
-		)
-			return STRUCTURES.NODE;
+	getStructureMarker<T extends BaseStructure>(value: T) {
+		if (value instanceof PackstreamNode) return STRUCTURES.NODE;
 
-		if (
-			typeof value.id === 'number' &&
-			typeof value.type === 'string' &&
-			typeof value.properties === 'object' &&
-			typeof value.element_id === 'string'
-		)
+		if (value instanceof UnboundRelationship)
 			return STRUCTURES.UNBOUND_RELATIONSHIP;
 
-		if (
-			typeof value.id === 'number' &&
-			typeof value.startNodeId === 'number' &&
-			typeof value.endNodeId === 'number' &&
-			typeof value.type === 'string'
-		)
-			return STRUCTURES.RELATIONSHIP;
+		if (value instanceof Relationship) return STRUCTURES.RELATIONSHIP;
 
-		if (
-			Array.isArray(value.nodes) &&
-			Array.isArray(value.rels) &&
-			Array.isArray(value.indices)
-		)
-			return STRUCTURES.PATH;
+		if (value instanceof Path) return STRUCTURES.PATH;
+
+		if (value instanceof PackstreamDate) return STRUCTURES.DATE;
+
+		if (value instanceof Time) return STRUCTURES.TIME;
+
+		if (value instanceof LocalTime) return STRUCTURES.LOCAL_TIME;
+
+		if (value instanceof DateTime) return STRUCTURES.DATE_TIME;
+
+		if (value instanceof DateTimeZoneId) return STRUCTURES.DATE_TIME_ZONE_ID;
+
+		if (value instanceof LocalDateTime) return STRUCTURES.LOCAL_DATE_TIME;
+
+		if (value instanceof Duration) return STRUCTURES.DURATION;
+
+		if (value instanceof Point2D) return STRUCTURES.POINT_2D;
+
+		if (value instanceof Point3D) return STRUCTURES.POINT_3D;
 
 		return 0;
 	}
