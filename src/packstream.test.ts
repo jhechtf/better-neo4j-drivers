@@ -13,8 +13,12 @@ import {
 import {
 	DateTime,
 	Duration,
+	LocalDateTime,
+	LocalTime,
 	PackstreamDate,
 	PackstreamNode,
+	Path,
+	UnboundRelationship,
 } from './structures';
 
 describe('Packstream class', () => {
@@ -436,6 +440,71 @@ describe('Packstream class', () => {
 				expect(p.unpackageStructure(packagedDuration)).toStrictEqual(duration);
 			});
 		});
+
+		describe('Local Date Time', () => {
+			it('Packages LocalDateTime correctly', () => {
+				const ldt = new LocalDateTime(0, 1);
+				const packagedDict = p.packageDict(
+					ldt as unknown as Record<string, unknown>,
+				);
+				const packagedLdt = p.packageStructure(ldt);
+
+				const raw = Uint8Array.from([
+					STRUCTURES.TINY_STRUCT + 2,
+					STRUCTURES.LOCAL_DATE_TIME,
+					...packagedDict,
+				]);
+				expect(packagedLdt).toStrictEqual(raw);
+			});
+
+			it('Unpackages LocalDateTime correctly', () => {
+				const ldt = new LocalDateTime(0, 1);
+				const packaged = p.packageStructure(ldt);
+
+				expect(p.unpackageStructure(packaged)).toStrictEqual(ldt);
+			});
+		});
+
+		describe('LocalTime', () => {
+			it('Packages LocalTime correctly', () => {
+				const lt = new LocalTime(1);
+				const packaged = p.packageStructure(lt);
+				const dict = p.packageDict(lt as unknown as Record<string, unknown>);
+				const raw = Uint8Array.from([
+					STRUCTURES.TINY_STRUCT + 1,
+					STRUCTURES.LOCAL_TIME,
+					...dict,
+				]);
+				expect(packaged).toStrictEqual(raw);
+			});
+
+			it('Unpackages LocalTime correctly', () => {
+				const lt = new LocalTime(1);
+				expect(p.unpackageStructure(p.packageStructure(lt))).toStrictEqual(lt);
+			});
+		});
+
+		// describe('Path', () => {
+		// 	const path = new Path(
+		// 		[new PackstreamNode(1, {}, ['Something'], '1')],
+		// 		[new UnboundRelationship(1, 'something', {}, '1')],
+		// 		[1],
+		// 	);
+		// 	it('Packages Path correctly', () => {
+		// 		const dict = p.packageDict(path as unknown as Record<string, unknown>);
+		// 		const raw = Uint8Array.from([
+		// 			STRUCTURES.TINY_STRUCT + 3,
+		// 			STRUCTURES.PATH,
+		// 			...dict,
+		// 		]);
+		// 		expect(p.packageStructure(path)).toStrictEqual(raw);
+		// 	});
+		// 	it('Unpackages Path Correctly', () => {
+		// 		expect(p.unpackageStructure(p.packageStructure(path))).toStrictEqual(
+		// 			path,
+		// 		);
+		// 	});
+		// });
 	});
 
 	describe('getTotalBytes', () => {

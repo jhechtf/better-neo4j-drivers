@@ -200,6 +200,18 @@ export class Packstream {
 				const v = this.unpackageDict<Duration>(value.slice(2));
 				return new Duration(v.months, v.days, v.seconds, v.nanoseconds);
 			}
+			case STRUCTURES.LOCAL_DATE_TIME: {
+				const v = this.unpackageDict<LocalDateTime>(value.slice(2));
+				return new LocalDateTime(v.seconds, v.nanoseconds);
+			}
+			case STRUCTURES.LOCAL_TIME: {
+				const v = this.unpackageDict<LocalTime>(value.slice(2));
+				return new LocalTime(v.nanoseconds);
+			}
+			case STRUCTURES.PATH: {
+				const v = this.unpackageDict<Path>(value.slice(2));
+				return new Path(v.nodes, v.rels, v.indices);
+			}
 			default:
 				return {} as T;
 		}
