@@ -8,8 +8,14 @@ import {
 	NULL_MARKER,
 	FLOAT_MARKER,
 	DICT_TYPES,
+	STRUCTURES,
 } from './markers';
-import { PackstreamNode } from './structures';
+import {
+	DateTime,
+	Duration,
+	PackstreamDate,
+	PackstreamNode,
+} from './structures';
 
 describe('Packstream class', () => {
 	const p = new Packstream();
@@ -334,18 +340,100 @@ describe('Packstream class', () => {
 
 	describe('Structures', () => {
 		describe('Nodes', () => {
-			it('Packages and unpackages Nodes correctly', () => {
+			it('Packages Nodes correctly', () => {
 				const b = new PackstreamNode(1, {}, ['User'], '1');
 				const node = p.packageStructure(b);
 				const dict = p.packageDict(b as unknown as Record<string, unknown>);
-				const raw = [0xb4, 0x4e, ...dict];
+				const raw = Uint8Array.from([0xb4, 0x4e, ...dict]);
 
-				for (let i = 0; i < node.length; i++) {
-					console.info(i, node[i], raw[i]);
-					expect(node[i]).toBe(raw[i]);
-				}
+				expect(node).toStrictEqual(raw);
+			});
 
-				expect(1).toBe(1);
+			it('Unpackages Nodes correctly', () => {
+				const node = new PackstreamNode(1, {}, ['Test'], '1');
+				const packaged = p.packageStructure(node);
+				const unpackaged = p.unpackageStructure(packaged);
+				expect(unpackaged).toHaveProperty('id');
+				expect(unpackaged).toStrictEqual(node);
+
+				const otherNode = new PackstreamNode(
+					10,
+					{
+						a: 'something',
+						b: 3,
+						c: [null, 'three'],
+					},
+					['Test', 'Bob'],
+					'abcdef',
+				);
+				const otherPackaged = p.packageStructure(otherNode);
+				const unpackagedOther = p.unpackageStructure(otherPackaged);
+				expect(unpackagedOther).toStrictEqual(otherNode);
+			});
+		});
+		describe('Dates', () => {
+			it('Packages dates correctly', () => {
+				const dateObj = new PackstreamDate(1);
+				const dateDict = p.packageDict({ days: 1 });
+				const packagedDate = p.packageStructure(dateObj);
+				const rawBytes = Uint8Array.from([
+					STRUCTURES.TINY_STRUCT + 1,
+					STRUCTURES.DATE,
+					...dateDict,
+				]);
+
+				expect(packagedDate).toStrictEqual(rawBytes);
+			});
+
+			it('Unpackages dates correctly', () => {
+				const packstreamDate = new PackstreamDate(1);
+				const packagedDate = p.packageStructure(packstreamDate);
+				expect(p.unpackageStructure(packagedDate)).toStrictEqual(
+					packstreamDate,
+				);
+			});
+		});
+
+		describe('DateTime', () => {
+			it('Packages DateTimes correctly', () => {
+				const datetime = new DateTime(0, 0, 3600);
+				const packagedDt = p.packageStructure(datetime);
+				const packagedDtDict = p.packageDict({
+					seconds: 0,
+					nanoseconds: 0,
+					tz_offset_seconds: 3600,
+				} satisfies DateTime);
+
+				const rawBytes = Uint8Array.from([
+					STRUCTURES.TINY_STRUCT + 3,
+					STRUCTURES.DATE_TIME,
+					...packagedDtDict,
+				]);
+
+				expect(packagedDt).toStrictEqual(rawBytes);
+			});
+		});
+
+		describe('Duration', () => {
+			it('Packages durations correctly', () => {
+				const duration = new Duration(0, 0, 0, 0);
+				const packagedDuration = p.packageStructure(duration);
+				const packagedDict = p.packageDict(
+					duration as unknown as Record<string, unknown>,
+				);
+
+				const raw = Uint8Array.from([
+					STRUCTURES.TINY_STRUCT + 4,
+					STRUCTURES.DURATION,
+					...packagedDict,
+				]);
+
+				expect(packagedDuration).toStrictEqual(raw);
+			});
+			it('Unpackages durations correctly', () => {
+				const duration = new Duration(1, 2, 3, 4);
+				const packagedDuration = p.packageStructure(duration);
+				expect(p.unpackageStructure(packagedDuration)).toStrictEqual(duration);
 			});
 		});
 	});

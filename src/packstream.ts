@@ -176,12 +176,33 @@ export class Packstream {
 		return 0;
 	}
 
-	unpackageStructure<T extends StructureType = StructureType>(
-		value: Uint8Array,
-	): T {
-		const b = this.unpackageDict(value.slice(2));
-		// Stub for now
-		return b as T;
+	unpackageStructure<T extends StructureType>(value: Uint8Array): T {
+		const [, marker] = value;
+
+		switch (marker) {
+			case STRUCTURES.NODE: {
+				const v = this.unpackageDict<PackstreamNode>(value.slice(2));
+				return new PackstreamNode(v.id, v.properties, v.labels, v.element_id);
+			}
+			case STRUCTURES.DATE: {
+				const v = this.unpackageDict<PackstreamDate>(value.slice(2));
+				return new PackstreamDate(v.days);
+			}
+			case STRUCTURES.DATE_TIME: {
+				const v = this.unpackageDict<DateTime>(value.slice(2));
+				return new DateTime(v.seconds, v.nanoseconds, v.tz_offset_seconds);
+			}
+			case STRUCTURES.DATE_TIME_ZONE_ID: {
+				const v = this.unpackageDict<DateTimeZoneId>(value.slice(2));
+				return new DateTimeZoneId(v.seconds, v.nanoseconds, v.tz_id);
+			}
+			case STRUCTURES.DURATION: {
+				const v = this.unpackageDict<Duration>(value.slice(2));
+				return new Duration(v.months, v.days, v.seconds, v.nanoseconds);
+			}
+			default:
+				return {} as T;
+		}
 	}
 
 	unpackageNumber(
@@ -667,7 +688,7 @@ export class Packstream {
 		return Uint8Array.from([byteMaker, ...sizeBytes, ...baseThingies]);
 	}
 
-	unpackageDict<T extends Record<string, unknown>>(value: Uint8Array): T {
+	unpackageDict<T = Record<string, unknown>>(value: Uint8Array): T {
 		const [marker] = value;
 		const markerHigh = marker & 0xf0;
 		const markerLow = marker & 0xf;
