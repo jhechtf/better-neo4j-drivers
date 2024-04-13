@@ -18,7 +18,10 @@ import {
 	PackstreamDate,
 	PackstreamNode,
 	Path,
+	Point2D,
+	Point3D,
 	Relationship,
+	Time,
 	UnboundRelationship,
 } from './structures';
 
@@ -504,6 +507,46 @@ describe('Packstream class', () => {
 			it('Unpackages Path Correctly', () => {
 				expect(p.unpackageStructure(packagedPath)).toStrictEqual(path);
 			});
+
+			it('Works for Unbound Relationships', () => {
+				const ub = new UnboundRelationship(1, 'bob', { something: 1 }, 'bob');
+				expect(p.unpackageStructure(p.packageStructure(ub))).toStrictEqual(ub);
+			});
+
+			it('Works for relationships', () => {
+				const relationship = new Relationship(
+					1,
+					2,
+					3,
+					'Bob',
+					{ fuck: 'you' },
+					'1',
+					'2',
+					'3',
+				);
+				expect(
+					p.unpackageStructure(p.packageStructure(relationship)),
+				).toStrictEqual(relationship);
+			});
+
+			it('Works for 2D points', () => {
+				const point2d = new Point2D(1, 2, 3);
+				expect(p.unpackageStructure(p.packageStructure(point2d))).toStrictEqual(
+					point2d,
+				);
+			});
+
+			it('Works for 3D points', () => {
+				const point3d = new Point3D(1, 2, 3, 4);
+				expect(p.unpackageStructure(p.packageStructure(point3d))).toStrictEqual(
+					point3d,
+				);
+			});
+
+			it('Works for Time', () => {
+				const t = new Time(1, 0);
+				expect(p.unpackageStructure(p.packageStructure(t))).toStrictEqual(t);
+			});
 		});
 	});
 
@@ -732,10 +775,6 @@ describe('Packstream class', () => {
 				expect(p.getTotalBytes(packagedNode)).toBe(packagedNode.byteLength);
 				expect(p.getTotalBytes(packagedRel)).toBe(packagedRel.byteLength);
 			});
-			it('Does a thing', () => {
-				expect(p.unpackageStructure(packagedRel)).toStrictEqual(relationship);
-			});
-			// TODO: get this to work
 		});
 	});
 });

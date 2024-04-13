@@ -224,7 +224,6 @@ export class Packstream {
 			}
 			case STRUCTURES.RELATIONSHIP: {
 				const v = this.unpackageDict<Relationship>(value.slice(2));
-				console.info(v);
 				return new Relationship(
 					v.id,
 					v.startNodeId,
@@ -235,6 +234,18 @@ export class Packstream {
 					v.start_node_element_id,
 					v.end_node_element_id,
 				);
+			}
+			case STRUCTURES.POINT_2D: {
+				const v = this.unpackageDict<Point2D>(value.slice(2));
+				return new Point2D(v.srid, v.x, v.y);
+			}
+			case STRUCTURES.POINT_3D: {
+				const { srid, x, y, z } = this.unpackageDict<Point3D>(value.slice(2));
+				return new Point3D(srid, x, y, z);
+			}
+			case STRUCTURES.TIME: {
+				const v = this.unpackageDict<Time>(value.slice(2));
+				return new Time(v.nanoseconds, v.tz_offset_seconds);
 			}
 			default:
 				return {} as T;
@@ -565,7 +576,7 @@ export class Packstream {
 		const dv = new DataView(message.buffer);
 
 		if (marker === STRING_TYPES.STRING_8) {
-			return this.decoder.decode(message.slice(2, dv.getUint8(1) + 3));
+			return this.decoder.decode(message.slice(2, dv.getUint8(1) + 2));
 			// biome-ignore lint/style/noUselessElse: <explanation>
 		} else if (marker === STRING_TYPES.STRING_16) {
 			return this.decoder.decode(message.slice(4, dv.getUint16(1) + 5));

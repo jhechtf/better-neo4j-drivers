@@ -8,7 +8,7 @@ export class LocalTime extends BaseStructure {
 
 export class Time extends LocalTime {
 	constructor(
-		public nanoseconds,
+		public nanoseconds: number,
 		public tz_offset_seconds: number,
 	) {
 		super(nanoseconds);
