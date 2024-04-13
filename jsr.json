@@ -1,0 +1,8 @@
+{
+  "$schema": "https://jsr.io/schema/config-file.v1.json",
+  "name": "@jhechtf/neo4j-drivers",
+  "version": "0.1.0",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
