@@ -710,7 +710,12 @@ describe('Packstream class', () => {
 			});
 
 			it('Works for lists of varying types', () => {
-				const list = ['hello', { a: 1 }, null];
+				const list = [
+					'hello',
+					new PackstreamNode(1, {}, ['User'], '1'),
+					{ a: 1 },
+					null,
+				];
 				expect(p.unpackageList(p.packageList(list))).toStrictEqual(list);
 			});
 
