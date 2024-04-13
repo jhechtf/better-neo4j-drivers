@@ -18,6 +18,7 @@ import {
 	PackstreamDate,
 	PackstreamNode,
 	Path,
+	Relationship,
 	UnboundRelationship,
 } from './structures';
 
@@ -484,27 +485,26 @@ describe('Packstream class', () => {
 			});
 		});
 
-		// describe('Path', () => {
-		// 	const path = new Path(
-		// 		[new PackstreamNode(1, {}, ['Something'], '1')],
-		// 		[new UnboundRelationship(1, 'something', {}, '1')],
-		// 		[1],
-		// 	);
-		// 	it('Packages Path correctly', () => {
-		// 		const dict = p.packageDict(path as unknown as Record<string, unknown>);
-		// 		const raw = Uint8Array.from([
-		// 			STRUCTURES.TINY_STRUCT + 3,
-		// 			STRUCTURES.PATH,
-		// 			...dict,
-		// 		]);
-		// 		expect(p.packageStructure(path)).toStrictEqual(raw);
-		// 	});
-		// 	it('Unpackages Path Correctly', () => {
-		// 		expect(p.unpackageStructure(p.packageStructure(path))).toStrictEqual(
-		// 			path,
-		// 		);
-		// 	});
-		// });
+		describe('Path', () => {
+			const path = new Path(
+				[new PackstreamNode(1, {}, ['Something'], '1')],
+				[new UnboundRelationship(1, 'something', {}, '1')],
+				[1],
+			);
+			const packagedPath = p.packageStructure(path);
+			it('Packages Path correctly', () => {
+				const dict = p.packageDict(path as unknown as Record<string, unknown>);
+				const raw = Uint8Array.from([
+					STRUCTURES.TINY_STRUCT + 3,
+					STRUCTURES.PATH,
+					...dict,
+				]);
+				expect(packagedPath).toStrictEqual(raw);
+			});
+			it('Unpackages Path Correctly', () => {
+				expect(p.unpackageStructure(packagedPath)).toStrictEqual(path);
+			});
+		});
 	});
 
 	describe('getTotalBytes', () => {
@@ -711,6 +711,31 @@ describe('Packstream class', () => {
 			// const largeObj = Object.fromEntries(
 
 			// )
+		});
+
+		describe('Works for structures', () => {
+			const node = new PackstreamNode(1, {}, ['One'], '1');
+			const packagedNode = p.packageStructure(node);
+			const relationship = new Relationship(
+				1,
+				1,
+				2,
+				'knows',
+				{},
+				'1',
+				'1',
+				'2',
+			);
+			const packagedRel = p.packageStructure(relationship);
+
+			it('structures', () => {
+				expect(p.getTotalBytes(packagedNode)).toBe(packagedNode.byteLength);
+				expect(p.getTotalBytes(packagedRel)).toBe(packagedRel.byteLength);
+			});
+			it('Does a thing', () => {
+				expect(p.unpackageStructure(packagedRel)).toStrictEqual(relationship);
+			});
+			// TODO: get this to work
 		});
 	});
 });

@@ -181,7 +181,8 @@ export class Packstream {
 
 		switch (marker) {
 			case STRUCTURES.NODE: {
-				const v = this.unpackageDict<PackstreamNode>(value.slice(2));
+				const vv = value.slice(2);
+				const v = this.unpackageDict<PackstreamNode>(vv);
 				return new PackstreamNode(v.id, v.properties, v.labels, v.element_id);
 			}
 			case STRUCTURES.DATE: {
@@ -211,6 +212,29 @@ export class Packstream {
 			case STRUCTURES.PATH: {
 				const v = this.unpackageDict<Path>(value.slice(2));
 				return new Path(v.nodes, v.rels, v.indices);
+			}
+			case STRUCTURES.UNBOUND_RELATIONSHIP: {
+				const v = this.unpackageDict<UnboundRelationship>(value.slice(2));
+				return new UnboundRelationship(
+					v.id,
+					v.type,
+					v.properties,
+					v.element_id,
+				);
+			}
+			case STRUCTURES.RELATIONSHIP: {
+				const v = this.unpackageDict<Relationship>(value.slice(2));
+				console.info(v);
+				return new Relationship(
+					v.id,
+					v.startNodeId,
+					v.endNodeId,
+					v.type,
+					v.properties,
+					v.element_id,
+					v.start_node_element_id,
+					v.end_node_element_id,
+				);
 			}
 			default:
 				return {} as T;
@@ -458,6 +482,8 @@ export class Packstream {
 		}
 
 		const packagedValues = values.map((v) => {
+			// return this.package(v);
+			// if (v instanceof BaseStructure) return this.packageStructure(v);
 			if (v instanceof Uint8Array) return this.packageBytes(v);
 			if (Array.isArray(v)) return this.packageList(v);
 			if (v === null) return Uint8Array.from([NULL_MARKER]);
@@ -472,6 +498,7 @@ export class Packstream {
 				case 'boolean':
 					return this.packageBoolean(v);
 				case 'object':
+					if (v instanceof BaseStructure) return this.packageStructure(v);
 					return this.packageDict(v as Record<string, unknown>);
 				default:
 					return Uint8Array.from([NULL_MARKER]);
@@ -771,10 +798,16 @@ export class Packstream {
 				markerHigh in LIST_TYPES ||
 				markerHigh in DICT_TYPES ||
 				marker in LIST_TYPES ||
-				marker in DICT_TYPES
+				marker in DICT_TYPES ||
+				markerHigh === STRUCTURES.TINY_STRUCT
 			)
 		)
 			return leadBytes + regularBytes;
+
+		if (markerHigh === STRUCTURES.TINY_STRUCT) {
+			// structures are kind of a bag of fuck
+			return 2 + this.getTotalBytes(value.slice(2));
+		}
 
 		// Otherwise, we needt to deal with lists / dicts requiring stupid shit
 		let totalBytes = leadBytes;
