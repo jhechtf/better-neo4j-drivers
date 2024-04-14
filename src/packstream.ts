@@ -18,7 +18,7 @@ import {
 	LocalTime,
 	Path,
 	Relationship,
-	StructureType,
+	type StructureType,
 	UnboundRelationship,
 	DateTime,
 	DateTimeZoneId,
