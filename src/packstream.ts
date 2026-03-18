@@ -385,7 +385,7 @@ export class Packstream {
 			reserveBytes = 3;
 			bufferLength = value.byteLength + reserveBytes;
 			byteMarker = BYTE_TYPES.BYTE_16;
-		} else if (between(value.byteLength, 65_356, 2_147_483_648)) {
+		} else if (between(value.byteLength, 65_536, 2_147_483_648)) {
 			reserveBytes = 5;
 			bufferLength = value.byteLength + reserveBytes;
 			byteMarker = BYTE_TYPES.BYTE_32;

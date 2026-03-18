@@ -10,7 +10,7 @@ export const VERSIONS = Uint8Array.from([
 export const BOLT_AGENT = 'BetterN4J/0.1.0';
 export const BOLT_AGENT_DICT = {
 	product: BOLT_AGENT,
-	platofrm: null,
+	platform: null,
 	language: 'Javascript/2020',
 	language_details: null,
 };
